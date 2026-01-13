@@ -1,0 +1,80 @@
+=========================================
+GOOGLE MAPS NOT SHOWING? - SOLUTION
+=========================================
+
+YOUR API KEY: AIzaSyCGXWO0VAGCK5M7lCi3Q_EBf2MtOnaoTxw
+
+MOST COMMON ISSUE: Google Maps requires BILLING ENABLED
+Even though Google provides $200/month free credits, you MUST add a billing account.
+
+STEP-BY-STEP FIX:
+=========================================
+
+1. GO TO GOOGLE CLOUD CONSOLE
+   https://console.cloud.google.com/
+
+2. SELECT YOUR PROJECT (where you created the API key)
+
+3. ⭐ ENABLE BILLING (REQUIRED!)
+   - Click on "Billing" in left menu
+   - Click "Link a billing account"
+   - Add your credit/debit card
+   - Don't worry: You get $200 free credits/month
+   - You won't be charged unless you exceed free tier
+
+4. ENABLE REQUIRED APIs
+   Go to "APIs & Services" > "Library"
+   Search and ENABLE each:
+   ✓ Maps SDK for Android
+   ✓ Geocoding API  
+   ✓ Geolocation API
+
+5. CHECK API KEY RESTRICTIONS
+   Go to "APIs & Services" > "Credentials"
+   Click your API key
+   
+   Application restrictions:
+   - Select "Android apps"
+   - Add package: com.example.regional_shorts_app
+   - Add SHA-1 fingerprint (get it by running):
+     keytool -list -v -keystore "C:\Users\YOUR_USERNAME\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android
+   
+   OR set to "None" for testing
+
+6. REBUILD YOUR APP
+   Stop the app completely, then run:
+   flutter clean
+   flutter pub get
+   flutter run
+
+7. CHECK DEVICE LOCATION PERMISSIONS
+   - Open app settings on your device
+   - Grant location permission to the app
+   - Set to "Allow all the time" or "While using app"
+
+=========================================
+ALTERNATIVE: Test if API Key Works
+=========================================
+
+Open this URL in your browser (replace YOUR_LAT and YOUR_LNG):
+https://maps.googleapis.com/maps/api/staticmap?center=12.9716,77.5946&zoom=12&size=400x400&key=AIzaSyCGXWO0VAGCK5M7lCi3Q_EBf2MtOnaoTxw
+
+If you see:
+- A map image = API key works! ✓
+- Error message = API key needs billing or restrictions fixed
+
+=========================================
+STILL NOT WORKING?
+=========================================
+
+Check Android Logcat for errors:
+1. Connect device via USB
+2. Run: adb logcat | findstr "Google"
+3. Look for error messages about Maps API
+
+Common errors:
+- "API key not found" = Billing not enabled
+- "This API project is not authorized" = Enable Maps SDK for Android
+- "REQUEST_DENIED" = Check API restrictions
+
+=========================================

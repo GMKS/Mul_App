@@ -1,0 +1,25 @@
+name: regional_shorts_app
+description: Regional, Business & Devotional Shorts App
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  shared_preferences: ^2.2.2
+  video_player: ^2.8.1
+  chewie: ^1.7.1
+  url_launcher: ^6.2.1
+  image_picker: ^1.0.4
+  path_provider: ^2.1.1
+  google_maps_flutter: ^2.5.0
+  geolocator: ^10.1.0
+  geocoding: ^2.1.1
+  provider: ^6.0.5
+  supabase_flutter: ^2.0.0
+
+flutter:
+  uses-material-design: true
