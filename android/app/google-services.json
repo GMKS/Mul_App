@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "558694318208",
+    "project_id": "mylocalapp-2add3",
+    "storage_bucket": "mylocalapp-2add3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:558694318208:android:ee4508c922167552ad2665",
+        "android_client_info": {
+          "package_name": "com.example.regional_shorts_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZaAmn8sGGzWu6F8u4zsLkvttbSllZWvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

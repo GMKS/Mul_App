@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/language_service.dart';
 import 'region_selection_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/custom_cards.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
   final bool isInitialSetup;
@@ -90,6 +92,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -101,10 +104,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                   const SizedBox(height: 20),
                   Container(
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.red.shade400, Colors.red.shade700],
-                      ),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -114,12 +115,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Choose Your Language',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.headline1,
                   ),
                   const SizedBox(height: 8),
                   Text(

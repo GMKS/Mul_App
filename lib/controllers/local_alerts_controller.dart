@@ -1,7 +1,8 @@
-// Local Alerts Controller
 import 'package:flutter/material.dart';
 import '../models/local_alert_model.dart';
 import '../repositories/local_alerts_repo.dart';
+
+// Local Alerts Controller
 
 enum AlertDistanceFilter {
   all,
@@ -14,11 +15,32 @@ class LocalAlertsController extends ChangeNotifier {
   final LocalAlertsRepository _repository = LocalAlertsRepository();
 
   List<LocalAlert> allAlerts = [];
+  List<LocalAlert> runtimeAlerts = [];
   List<LocalAlert> filteredAlerts = [];
   bool isLoading = false;
   String? error;
 
   AlertDistanceFilter selectedFilter = AlertDistanceFilter.all;
+
+  // Add alert from FCM notification data
+  void addAlertFromNotification(Map<String, dynamic> data) {
+    final alert = LocalAlert(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: data['title'] ?? 'Alert',
+      message: data['customKey'] ?? data['body'] ?? '',
+      area: data['area'] ?? '',
+      locality: data['locality'] ?? '',
+      distanceKm: 0,
+      startTime: DateTime.now(),
+      expiryTime: null,
+      icon: null,
+      category: data['category'] ?? 'announcement',
+    );
+    runtimeAlerts.insert(0, alert);
+    _mergeAlerts();
+    applyFilter(selectedFilter);
+    notifyListeners();
+  }
 
   Future<void> loadAlerts({
     required String city,
@@ -33,13 +55,9 @@ class LocalAlertsController extends ChangeNotifier {
         city: city,
         state: state,
       );
-
-      // Filter out expired alerts
       allAlerts = allAlerts.where((alert) => alert.isActive).toList();
-
-      // Sort by start time (latest first)
       allAlerts.sort((a, b) => b.startTime.compareTo(a.startTime));
-
+      _mergeAlerts();
       applyFilter(selectedFilter);
     } catch (e) {
       error = e.toString();
@@ -47,6 +65,11 @@ class LocalAlertsController extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  void _mergeAlerts() {
+    // Combine loaded alerts and runtime alerts, with runtime alerts first
+    allAlerts = [...runtimeAlerts, ...allAlerts];
   }
 
   void applyFilter(AlertDistanceFilter filter) {

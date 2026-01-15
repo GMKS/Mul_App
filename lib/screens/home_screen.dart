@@ -5,6 +5,7 @@ import '../models/user_model.dart';
 import '../services/feed_service.dart';
 import '../services/language_service.dart';
 import '../services/region_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/social_interactions.dart';
 import '../widgets/creator_badge.dart';
 import '../widgets/report_dialog.dart';
@@ -18,6 +19,10 @@ import 'region_selection_screen.dart';
 import 'cab_services_screen.dart';
 import 'local_alerts_screen.dart';
 import '../main.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/custom_cards.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +33,41 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
+  Future<void> _logout() async {
+    await AuthService.signOut();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (route) => false,
+    );
+  }
+
+  // Send test notification for development
+  Future<void> _sendTestNotification() async {
+    try {
+      await NotificationService().showTestNotification();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Test notification sent! 🔔'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send notification: $e'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   int _selectedCategoryIndex = -1; // Start with no category selected
   String? _selectedHashtag;
   late TabController _tabController;
@@ -332,16 +372,16 @@ class _HomeScreenState extends State<HomeScreen>
       greeting = 'Good Evening';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A4D68),
-      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.white,
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         title: const Text(
           'My City App',
           style: TextStyle(
-            color: Colors.white,
+            color: Color(0xFF4A90E2),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -349,20 +389,38 @@ class _HomeScreenState extends State<HomeScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              // Search functionality
-            },
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.white),
+            tooltip: 'Test Notification',
+            onPressed: _sendTestNotification,
           ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {
-              // Menu
-            },
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Logout',
+            onPressed: _logout,
           ),
         ],
       ),
-      body: SafeArea(
-        child: _buildCategoryContent(),
+      body: Column(
+        children: [
+          if (NotificationService().fcmToken != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SelectableText(
+                'FCM Token: ${NotificationService().fcmToken}',
+                style: const TextStyle(fontSize: 12, color: Colors.black),
+              ),
+            ),
+          Expanded(
+            child: _buildCategoryContent(),
+          ),
+        ],
       ),
     );
   }
@@ -371,12 +429,11 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF0A4D68),
-            Color(0xFF088395),
-            Color(0xFF05BFDB),
+            Color(0xFF4A90E2),
+            Color(0xFF50C9C3),
           ],
         ),
       ),
@@ -457,54 +514,63 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildCategoryCardsRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedCategoryIndex = 0; // Regional
-                });
-              },
-              child: _buildCompactCategoryCard(
-                title: 'Regional',
-                subtitle: 'Videos',
-                icon: Icons.location_on,
-                gradient: [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)],
-              ),
-            ),
+          CategoryCard(
+            label: 'Regional',
+            color: AppColors.category1,
+            icon: Icons.location_on,
+            onTap: () {
+              print('🔵 Regional card tapped');
+              setState(() {
+                _selectedCategoryIndex = 0;
+              });
+              // Show a snackbar to confirm tap is working
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Opening Regional videos...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedCategoryIndex = 1; // Business
-                });
-              },
-              child: _buildCompactCategoryCard(
-                title: 'Business',
-                subtitle: 'Videos',
-                icon: Icons.business_center,
-                gradient: [const Color(0xFF6C63FF), const Color(0xFF5A52E0)],
-              ),
-            ),
+          const SizedBox(height: 12),
+          CategoryCard(
+            label: 'Business',
+            color: AppColors.category2,
+            icon: Icons.business_center,
+            onTap: () {
+              print('🟠 Business card tapped');
+              setState(() {
+                _selectedCategoryIndex = 1;
+              });
+              // Show a snackbar to confirm tap is working
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Opening Business videos...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedCategoryIndex = 2; // Devotional
-                });
-              },
-              child: _buildCompactCategoryCard(
-                title: 'Devotional',
-                subtitle: 'Videos',
-                icon: Icons.self_improvement,
-                gradient: [const Color(0xFF9B59B6), const Color(0xFF8E44AD)],
-              ),
-            ),
+          const SizedBox(height: 12),
+          CategoryCard(
+            label: 'Devotional',
+            color: AppColors.category3,
+            icon: Icons.self_improvement,
+            onTap: () {
+              print('🔵 Devotional card tapped');
+              setState(() {
+                _selectedCategoryIndex = 2;
+              });
+              // Show a snackbar to confirm tap is working
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Opening Devotional videos...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
           ),
         ],
       ),

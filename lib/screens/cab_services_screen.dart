@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../theme/app_theme.dart';
+import '../widgets/custom_cards.dart';
 
 class CabServicesScreen extends StatefulWidget {
   final String? userCity;
@@ -17,35 +19,26 @@ class _CabServicesScreenState extends State<CabServicesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cab Services'),
+        backgroundColor: AppColors.primary,
+        title: Text('Cab Services',
+            style: AppTextStyles.headline2.copyWith(color: Colors.white)),
         centerTitle: true,
         elevation: 0,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF0F4F8),
-              Color(0xFFE8EEF4),
-              Color(0xFFF5F5F5),
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: Column(
           children: [
-            // Header with location
             if (widget.userCity != null)
               Container(
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.card,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: AppColors.icon.withOpacity(0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -53,15 +46,11 @@ class _CabServicesScreenState extends State<CabServicesScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on, color: Color(0xFFFF6B6B)),
+                    const Icon(Icons.location_on, color: AppColors.category1),
                     const SizedBox(width: 12),
                     Text(
                       'Cab Services in ${widget.userCity}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3436),
-                      ),
+                      style: AppTextStyles.body,
                     ),
                   ],
                 ),

@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import '../services/region_service.dart';
 import 'home_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/custom_cards.dart';
 
 class RegionSelectionScreen extends StatefulWidget {
   final bool isInitialSetup;
@@ -834,10 +836,8 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                   if (widget.isInitialSetup) const SizedBox(height: 20),
                   Container(
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.shade400, Colors.blue.shade700],
-                      ),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -847,12 +847,9 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Select Your Region',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.headline1,
                   ),
                   const SizedBox(height: 8),
                   Text(
