@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/local_alerts_controller.dart';
 import '../main.dart';
 
@@ -127,6 +128,13 @@ class NotificationService {
       debugPrint('📱 FCM Token: $token');
       debugPrint(
           '👆 Copy this token to test notifications from Firebase Console');
+
+      // Save token to shared preferences
+      if (token != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', token);
+        debugPrint('✅ FCM Token saved to storage');
+      }
       // TODO: Send token to your backend
     } catch (e) {
       debugPrint('❌ Failed to get FCM token: $e');

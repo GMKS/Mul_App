@@ -16,6 +16,7 @@ class Festival {
   final String iconEmoji;
   final String bannerUrl;
   final List<String> relatedHashtags;
+  final String? religion; // Associated religion
 
   Festival({
     required this.id,
@@ -28,6 +29,7 @@ class Festival {
     required this.iconEmoji,
     this.bannerUrl = '',
     this.relatedHashtags = const [],
+    this.religion,
   });
 
   bool get isActive {
@@ -61,6 +63,7 @@ class Festival {
       iconEmoji: json['iconEmoji'] ?? '🎉',
       bannerUrl: json['bannerUrl'] ?? '',
       relatedHashtags: List<String>.from(json['relatedHashtags'] ?? []),
+      religion: json['religion'],
     );
   }
 
@@ -76,12 +79,14 @@ class Festival {
       'iconEmoji': iconEmoji,
       'bannerUrl': bannerUrl,
       'relatedHashtags': relatedHashtags,
+      'religion': religion,
     };
   }
 
   // Predefined festivals
   static List<Festival> getPredefinedFestivals(int year) {
     return [
+      // Hindu Festivals
       Festival(
         id: 'diwali_$year',
         name: 'Diwali',
@@ -92,11 +97,12 @@ class Festival {
         themeColor: '#FF9800',
         iconEmoji: '🪔',
         relatedHashtags: [
-          '#Diwali',
-          '#FestivalOfLights',
-          '#DiwaliVibes',
-          '#HappyDiwali'
+          'diwali',
+          'festival_of_lights',
+          'diwali_vibes',
+          'happy_diwali'
         ],
+        religion: 'hinduism',
       ),
       Festival(
         id: 'holi_$year',
@@ -108,44 +114,12 @@ class Festival {
         themeColor: '#E91E63',
         iconEmoji: '🎨',
         relatedHashtags: [
-          '#Holi',
-          '#FestivalOfColors',
-          '#HoliHai',
-          '#HappyHoli'
+          'holi',
+          'festival_of_colors',
+          'holi_hai',
+          'happy_holi'
         ],
-      ),
-      Festival(
-        id: 'pongal_$year',
-        name: 'Pongal',
-        description: 'Harvest Festival',
-        startDate: DateTime(year, 1, 14),
-        endDate: DateTime(year, 1, 17),
-        regions: ['Tamil Nadu', 'Andhra Pradesh', 'Telangana'],
-        themeColor: '#4CAF50',
-        iconEmoji: '🌾',
-        relatedHashtags: ['#Pongal', '#HappyPongal', '#ThaiPongal'],
-      ),
-      Festival(
-        id: 'onam_$year',
-        name: 'Onam',
-        description: 'Harvest Festival of Kerala',
-        startDate: DateTime(year, 8, 28),
-        endDate: DateTime(year, 9, 8),
-        regions: ['Kerala'],
-        themeColor: '#FFEB3B',
-        iconEmoji: '🛶',
-        relatedHashtags: ['#Onam', '#HappyOnam', '#Onashamsakal'],
-      ),
-      Festival(
-        id: 'durga_puja_$year',
-        name: 'Durga Puja',
-        description: 'Worship of Goddess Durga',
-        startDate: DateTime(year, 10, 9),
-        endDate: DateTime(year, 10, 13),
-        regions: ['West Bengal', 'Odisha', 'Assam'],
-        themeColor: '#F44336',
-        iconEmoji: '🙏',
-        relatedHashtags: ['#DurgaPuja', '#ShubhoBijoya', '#MaaDurga'],
+        religion: 'hinduism',
       ),
       Festival(
         id: 'ganesh_chaturthi_$year',
@@ -157,10 +131,11 @@ class Festival {
         themeColor: '#FF5722',
         iconEmoji: '🐘',
         relatedHashtags: [
-          '#GaneshChaturthi',
-          '#GanpatiBappaMorya',
-          '#LordGanesha'
+          'ganesh_chaturthi',
+          'ganpati_bappa_morya',
+          'lord_ganesha'
         ],
+        religion: 'hinduism',
       ),
       Festival(
         id: 'navratri_$year',
@@ -171,30 +146,187 @@ class Festival {
         regions: ['Gujarat', 'Maharashtra', 'all'],
         themeColor: '#9C27B0',
         iconEmoji: '💃',
-        relatedHashtags: ['#Navratri', '#Garba', '#Dandiya', '#JaiMataDi'],
+        relatedHashtags: ['navratri', 'garba', 'dandiya', 'jai_mata_di'],
+        religion: 'hinduism',
       ),
       Festival(
-        id: 'eid_$year',
-        name: 'Eid',
+        id: 'janmashtami_$year',
+        name: 'Janmashtami',
+        description: 'Birthday of Lord Krishna',
+        startDate: DateTime(year, 8, 26),
+        endDate: DateTime(year, 8, 27),
+        regions: ['all'],
+        themeColor: '#3F51B5',
+        iconEmoji: '🦚',
+        relatedHashtags: ['janmashtami', 'krishna_janmashtami', 'hare_krishna'],
+        religion: 'hinduism',
+      ),
+      Festival(
+        id: 'mahashivratri_$year',
+        name: 'Maha Shivratri',
+        description: 'Great Night of Shiva',
+        startDate: DateTime(year, 3, 8),
+        endDate: DateTime(year, 3, 9),
+        regions: ['all'],
+        themeColor: '#607D8B',
+        iconEmoji: '🔱',
+        relatedHashtags: ['mahashivratri', 'shivratri', 'har_har_mahadev'],
+        religion: 'hinduism',
+      ),
+      Festival(
+        id: 'durga_puja_$year',
+        name: 'Durga Puja',
+        description: 'Worship of Goddess Durga',
+        startDate: DateTime(year, 10, 9),
+        endDate: DateTime(year, 10, 13),
+        regions: ['West Bengal', 'Odisha', 'Assam'],
+        themeColor: '#F44336',
+        iconEmoji: '🙏',
+        relatedHashtags: ['durga_puja', 'shubho_bijoya', 'maa_durga'],
+        religion: 'hinduism',
+      ),
+      Festival(
+        id: 'pongal_$year',
+        name: 'Pongal',
+        description: 'Harvest Festival',
+        startDate: DateTime(year, 1, 14),
+        endDate: DateTime(year, 1, 17),
+        regions: ['Tamil Nadu', 'Andhra Pradesh', 'Telangana'],
+        themeColor: '#4CAF50',
+        iconEmoji: '🌾',
+        relatedHashtags: ['pongal', 'happy_pongal', 'thai_pongal'],
+        religion: 'hinduism',
+      ),
+      Festival(
+        id: 'onam_$year',
+        name: 'Onam',
+        description: 'Harvest Festival of Kerala',
+        startDate: DateTime(year, 8, 28),
+        endDate: DateTime(year, 9, 8),
+        regions: ['Kerala'],
+        themeColor: '#FFEB3B',
+        iconEmoji: '🛶',
+        relatedHashtags: ['onam', 'happy_onam', 'onashamsakal'],
+        religion: 'hinduism',
+      ),
+
+      // Islamic Festivals
+      Festival(
+        id: 'eid_ul_fitr_$year',
+        name: 'Eid ul-Fitr',
         description: 'Festival of Breaking the Fast',
         startDate: DateTime(year, 4, 9),
         endDate: DateTime(year, 4, 11),
         regions: ['all'],
         themeColor: '#4CAF50',
         iconEmoji: '🌙',
-        relatedHashtags: ['#Eid', '#EidMubarak', '#EidAlFitr'],
+        relatedHashtags: ['eid', 'eid_mubarak', 'eid_ul_fitr', 'ramadan'],
+        religion: 'islam',
       ),
+      Festival(
+        id: 'eid_ul_adha_$year',
+        name: 'Eid ul-Adha',
+        description: 'Festival of Sacrifice',
+        startDate: DateTime(year, 6, 16),
+        endDate: DateTime(year, 6, 19),
+        regions: ['all'],
+        themeColor: '#009688',
+        iconEmoji: '🐑',
+        relatedHashtags: ['eid_ul_adha', 'bakrid', 'eid_mubarak'],
+        religion: 'islam',
+      ),
+      Festival(
+        id: 'milad_un_nabi_$year',
+        name: 'Milad-un-Nabi',
+        description: 'Birthday of Prophet Muhammad',
+        startDate: DateTime(year, 9, 15),
+        endDate: DateTime(year, 9, 16),
+        regions: ['all'],
+        themeColor: '#00BCD4',
+        iconEmoji: '🕌',
+        relatedHashtags: ['milad_un_nabi', 'mawlid', 'prophet_birthday'],
+        religion: 'islam',
+      ),
+
+      // Christian Festivals
       Festival(
         id: 'christmas_$year',
         name: 'Christmas',
-        description: 'Festival celebrating birth of Jesus',
+        description: 'Celebrating birth of Jesus Christ',
         startDate: DateTime(year, 12, 24),
         endDate: DateTime(year, 12, 26),
         regions: ['all'],
         themeColor: '#F44336',
         iconEmoji: '🎄',
-        relatedHashtags: ['#Christmas', '#MerryChristmas', '#Xmas'],
+        relatedHashtags: ['christmas', 'merry_christmas', 'xmas'],
+        religion: 'christianity',
       ),
+      Festival(
+        id: 'easter_$year',
+        name: 'Easter',
+        description: 'Resurrection of Jesus Christ',
+        startDate: DateTime(year, 4, 20),
+        endDate: DateTime(year, 4, 21),
+        regions: ['all'],
+        themeColor: '#E1BEE7',
+        iconEmoji: '🐣',
+        relatedHashtags: ['easter', 'happy_easter', 'resurrection'],
+        religion: 'christianity',
+      ),
+      Festival(
+        id: 'good_friday_$year',
+        name: 'Good Friday',
+        description: 'Crucifixion of Jesus Christ',
+        startDate: DateTime(year, 4, 18),
+        endDate: DateTime(year, 4, 18),
+        regions: ['all'],
+        themeColor: '#795548',
+        iconEmoji: '✝️',
+        relatedHashtags: ['good_friday', 'holy_friday'],
+        religion: 'christianity',
+      ),
+
+      // Sikh Festivals
+      Festival(
+        id: 'vaisakhi_$year',
+        name: 'Vaisakhi',
+        description: 'Sikh New Year',
+        startDate: DateTime(year, 4, 14),
+        endDate: DateTime(year, 4, 14),
+        regions: ['Punjab', 'all'],
+        themeColor: '#FF9800',
+        iconEmoji: '🌾',
+        relatedHashtags: ['vaisakhi', 'baisakhi', 'sikh_new_year'],
+        religion: 'sikhism',
+      ),
+      Festival(
+        id: 'guru_nanak_jayanti_$year',
+        name: 'Guru Nanak Jayanti',
+        description: 'Birthday of Guru Nanak',
+        startDate: DateTime(year, 11, 15),
+        endDate: DateTime(year, 11, 15),
+        regions: ['Punjab', 'all'],
+        themeColor: '#FFC107',
+        iconEmoji: '🙏',
+        relatedHashtags: ['guru_nanak_jayanti', 'gurpurab', 'waheguru'],
+        religion: 'sikhism',
+      ),
+
+      // Buddhist Festivals
+      Festival(
+        id: 'buddha_purnima_$year',
+        name: 'Buddha Purnima',
+        description: 'Birthday of Buddha',
+        startDate: DateTime(year, 5, 12),
+        endDate: DateTime(year, 5, 12),
+        regions: ['all'],
+        themeColor: '#9C27B0',
+        iconEmoji: '☸️',
+        relatedHashtags: ['buddha_purnima', 'vesak', 'buddha_jayanti'],
+        religion: 'buddhism',
+      ),
+
+      // General
       Festival(
         id: 'new_year_$year',
         name: 'New Year',
@@ -204,7 +336,7 @@ class Festival {
         regions: ['all'],
         themeColor: '#2196F3',
         iconEmoji: '🎆',
-        relatedHashtags: ['#NewYear', '#HappyNewYear', '#NewYear${year + 1}'],
+        relatedHashtags: ['new_year', 'happy_new_year', 'new_year_${year + 1}'],
       ),
     ];
   }

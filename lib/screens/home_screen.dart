@@ -18,11 +18,14 @@ import 'language_selection_screen.dart';
 import 'region_selection_screen.dart';
 import 'cab_services_screen.dart';
 import 'local_alerts_screen.dart';
+import 'settings_screen.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_cards.dart';
+import '../core/route_manager.dart';
+import 'devotional/devotional_feed_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -388,40 +391,32 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {},
+            icon: const Icon(Icons.settings, color: Color(0xFF4A90E2)),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
           ),
           IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
+            icon: const Icon(Icons.notifications, color: Color(0xFF4A90E2)),
             tooltip: 'Test Notification',
             onPressed: _sendTestNotification,
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: const Icon(Icons.more_vert, color: Color(0xFF4A90E2)),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout, color: Color(0xFFE74C3C)),
             tooltip: 'Logout',
             onPressed: _logout,
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (NotificationService().fcmToken != null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SelectableText(
-                'FCM Token: ${NotificationService().fcmToken}',
-                style: const TextStyle(fontSize: 12, color: Colors.black),
-              ),
-            ),
-          Expanded(
-            child: _buildCategoryContent(),
-          ),
-        ],
-      ),
+      body: _buildCategoryContent(),
     );
   }
 
@@ -522,16 +517,8 @@ class _HomeScreenState extends State<HomeScreen>
             icon: Icons.location_on,
             onTap: () {
               print('🔵 Regional card tapped');
-              setState(() {
-                _selectedCategoryIndex = 0;
-              });
-              // Show a snackbar to confirm tap is working
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Opening Regional videos...'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+              // Navigate to the new Regional Feed Screen
+              Navigator.pushNamed(context, RouteManager.regionalFeed);
             },
           ),
           const SizedBox(height: 12),
@@ -560,14 +547,10 @@ class _HomeScreenState extends State<HomeScreen>
             icon: Icons.self_improvement,
             onTap: () {
               print('🔵 Devotional card tapped');
-              setState(() {
-                _selectedCategoryIndex = 2;
-              });
-              // Show a snackbar to confirm tap is working
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Opening Devotional videos...'),
-                  duration: Duration(seconds: 1),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DevotionalFeedScreen(),
                 ),
               );
             },

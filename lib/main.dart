@@ -1,53 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'screens/home_screen.dart';
-import 'screens/phone_login_screen.dart';
-import 'screens/login_screen.dart';
-import 'services/auth_service.dart';
+import 'package:provider/provider.dart';
+
+import 'core/app_state.dart';
+import 'core/route_manager.dart';
+import 'core/app_logger.dart';
+import 'controllers/local_alerts_controller.dart';
 import 'services/notification_service.dart';
+import 'services/connectivity_service.dart';
+import 'screens/splash_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/region_selection_screen.dart';
+import 'screens/language_selection_screen.dart';
+import 'screens/local_alerts_screen.dart';
+import 'screens/cab_services_screen.dart';
+import 'features/regional/regional.dart';
 import 'theme/app_theme.dart';
 
-import 'package:provider/provider.dart';
-import 'controllers/local_alerts_controller.dart';
-
-// Global navigator key for NotificationService to access context
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+// Global navigator key - kept for backward compatibility
+final GlobalKey<NavigatorState> navigatorKey = RouteManager.navigatorKey;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase (with error handling)
-  try {
-    await Firebase.initializeApp();
-    debugPrint('✅ Firebase initialized successfully');
+  // Set preferred orientations
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
-    // Set up background message handler
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-    // Initialize Notification Service
-    await NotificationService().init();
-  } catch (e) {
-    debugPrint('⚠️ Firebase initialization failed: $e');
-    debugPrint('⚠️ App will run without Firebase features');
-    debugPrint('⚠️ Add google-services.json to enable Firebase');
-  }
-
-  // Initialize Supabase
-  await Supabase.initialize(
-    url:
-        'https://vwazacymtdhvynuglzph.supabase.co', // TODO: Replace with your Supabase project URL
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3YXphY3ltdGRodnludWdsenBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzgzODksImV4cCI6MjA4MzgxNDM4OX0.IOuh5IHH9rcEcpdQlv0FJZChbO6aRJcLjo0XH9fPDw8', // TODO: Replace with your Supabase anon key
-  );
+  // Initialize services with error handling
+  await _initializeServices();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => LocalAlertsController(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppState()),
+        ChangeNotifierProvider(create: (_) => LocalAlertsController()),
+      ],
       child: const MyApp(),
     ),
   );
+}
+
+Future<void> _initializeServices() async {
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+    AppLogger.lifecycle('Firebase initialized');
+
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await NotificationService().init();
+  } catch (e) {
+    AppLogger.error('Firebase initialization failed', error: e);
+  }
+
+  // Initialize Supabase
+  try {
+    await Supabase.initialize(
+      url: 'https://vwazacymtdhvynuglzph.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3YXphY3ltdGRodnludWdsenBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzgzODksImV4cCI6MjA4MzgxNDM4OX0.IOuh5IHH9rcEcpdQlv0FJZChbO6aRJcLjo0XH9fPDw8',
+    );
+    AppLogger.lifecycle('Supabase initialized');
+  } catch (e) {
+    AppLogger.error('Supabase initialization failed', error: e);
+  }
+
+  // Initialize connectivity monitoring
+  try {
+    await ConnectivityService().init();
+    AppLogger.lifecycle('Connectivity service initialized');
+  } catch (e) {
+    AppLogger.error('Connectivity service failed', error: e);
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -56,70 +86,180 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: RouteManager.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'My City App',
-      theme: ThemeData(
-        scaffoldBackgroundColor: AppColors.background,
-        primaryColor: AppColors.primary,
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: AppColors.primary,
-          secondary: AppColors.accent,
-          background: AppColors.background,
-        ),
-        textTheme: TextTheme(
-          titleLarge: AppTextStyles.headline1,
-          titleMedium: AppTextStyles.headline2,
-          bodyLarge: AppTextStyles.body,
-          bodyMedium: AppTextStyles.bodySecondary,
-        ),
-        cardColor: AppColors.card,
-        iconTheme: IconThemeData(color: AppColors.icon),
-        appBarTheme: const AppBarTheme(
+      theme: _buildTheme(),
+      home: const SplashScreen(),
+      onGenerateRoute: _generateRoute,
+      onUnknownRoute: (settings) => MaterialPageRoute(
+        builder: (_) => _NotFoundScreen(routeName: settings.name),
+      ),
+    );
+  }
+
+  ThemeData _buildTheme() {
+    return ThemeData(
+      scaffoldBackgroundColor: AppColors.background,
+      primaryColor: AppColors.primary,
+      colorScheme: ColorScheme.fromSwatch().copyWith(
+        primary: AppColors.primary,
+        secondary: AppColors.accent,
+        surface: AppColors.surface,
+        error: AppColors.error,
+      ),
+      textTheme: const TextTheme(
+        titleLarge: AppTextStyles.headline1,
+        titleMedium: AppTextStyles.headline2,
+        bodyLarge: AppTextStyles.body,
+        bodyMedium: AppTextStyles.bodySecondary,
+        bodySmall: AppTextStyles.bodySmall,
+      ),
+      cardColor: AppColors.card,
+      iconTheme: const IconThemeData(color: AppColors.icon),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          elevation: 0,
+          padding: AppSpacing.buttonPadding,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.mdRadius,
+          ),
         ),
-        useMaterial3: true,
       ),
-      home: AuthService.isLoggedIn ? const HomeScreen() : LoginScreen(),
-      routes: {
-        '/home': (context) => const HomeScreen(),
-        '/login': (context) => LoginScreen(),
-      },
-      navigatorKey: navigatorKey,
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          padding: AppSpacing.buttonPadding,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.mdRadius,
+          ),
+          side: const BorderSide(color: AppColors.primary),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surfaceVariant,
+        border: OutlineInputBorder(
+          borderRadius: AppRadius.mdRadius,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.mdRadius,
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.mdRadius,
+          borderSide: const BorderSide(color: AppColors.primary),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: AppRadius.mdRadius,
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        contentPadding: AppSpacing.listItemPadding,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.card,
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.mdRadius,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.smRadius,
+        ),
+      ),
+      useMaterial3: true,
+    );
+  }
+
+  Route<dynamic>? _generateRoute(RouteSettings settings) {
+    AppLogger.navigation('Route requested', to: settings.name);
+
+    switch (settings.name) {
+      case RouteManager.splash:
+        return _buildRoute(settings, const SplashScreen());
+
+      case RouteManager.home:
+        return _buildRoute(settings, const HomeScreen());
+
+      case RouteManager.login:
+        return _buildRoute(settings, LoginScreen());
+
+      case RouteManager.regionSelection:
+        return _buildRoute(settings, const RegionSelectionScreen());
+
+      case RouteManager.languageSelection:
+        return _buildRoute(settings, const LanguageSelectionScreen());
+
+      case RouteManager.localAlerts:
+        return _buildRoute(settings, const LocalAlertsScreen());
+
+      case RouteManager.cabServices:
+        return _buildRoute(settings, const CabServicesScreen());
+
+      case RouteManager.regionalFeed:
+        return _buildRoute(settings, const RegionalFeedScreen());
+
+      default:
+        return null;
+    }
+  }
+
+  MaterialPageRoute<T> _buildRoute<T>(RouteSettings settings, Widget screen) {
+    return MaterialPageRoute<T>(
+      builder: (_) => screen,
+      settings: settings,
     );
   }
 }
 
-// --- DEMO: Customer Side Alert Submission & Fetch ---
-Future<void> submitLocalAlert() async {
-  final supabase = Supabase.instance.client;
-  final user = supabase.auth.currentUser;
-  if (user == null) {
-    // You should show a login screen or error
-    debugPrint('User not logged in!');
-    return;
-  }
-  await supabase.from('alert_submissions').insert({
-    'title': '20% off on all medical equipment',
-    'message': 'Limited time offer at MediCare Store',
-    'area': 'Medchal-Malkajgiri',
-    'locality': 'Kompally',
-    'category': 'offer',
-    'submitted_by': user.id,
-  });
-  debugPrint('Alert submitted for admin approval!');
-}
+class _NotFoundScreen extends StatelessWidget {
+  final String? routeName;
+  const _NotFoundScreen({this.routeName});
 
-Future<void> fetchApprovedAlerts() async {
-  final supabase = Supabase.instance.client;
-  final alerts = await supabase
-      .from('local_alerts')
-      .select()
-      .eq('status', 'approved')
-      .order('start_time', ascending: false);
-  debugPrint('Approved alerts:');
-  for (final alert in alerts) {
-    debugPrint(alert.toString());
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Not Found')),
+      body: Center(
+        child: Padding(
+          padding: AppSpacing.screenPadding,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Page not found',
+                style: AppTextStyles.headline2,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                routeName ?? 'Unknown route',
+                style: AppTextStyles.bodySecondary,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              ElevatedButton(
+                onPressed: () => RouteManager.goToHome(),
+                child: const Text('Go to Home'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
