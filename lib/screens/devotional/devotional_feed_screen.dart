@@ -1,16 +1,23 @@
 /// Devotional Feed Screen
 /// Complete devotional content with religion-based videos, quotes, and festivals
+/// Features: Nearby content, Festivals, Quotes, Temples tabs with distance filtering
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:video_player/video_player.dart';
 import '../../models/devotional_video_model.dart';
 import '../../models/festival_model.dart';
+import '../../models/quote_model.dart';
+import '../../models/temple_model.dart';
 import '../../services/devotional_service.dart';
 import '../../services/religion_service.dart';
 import '../../services/festival_service.dart';
+import '../../services/temple_service.dart';
+import '../../services/devotional_notification_service.dart';
 import '../../widgets/quote_of_the_day_widget.dart';
 import '../../widgets/festival_banner_widget.dart';
 import 'religion_selection_screen.dart';
+import 'upload_devotional_video_screen.dart';
 
 class DevotionalFeedScreen extends StatefulWidget {
   const DevotionalFeedScreen({super.key});
@@ -23,26 +30,35 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   Religion? _selectedReligion;
-  String? _selectedDistance;
+  DistanceCategory _selectedDistanceCategory = DistanceCategory.nearby;
   bool _isLoading = true;
   List<DevotionalVideo> _videos = [];
+  List<Temple> _temples = [];
+  List<DevotionalQuote> _quotes = [];
+  List<Festival> _upcomingFestivals = [];
   Festival? _activeFestival;
   bool _showFestivalBanner = true;
+
+  // User location
+  Position? _userLocation;
+  bool _locationLoading = true;
 
   final PageController _pageController = PageController();
   int _currentVideoIndex = 0;
 
-  final List<String> _distanceCategories = [
-    'all',
-    'nearby',
-    'regional',
-    'national'
+  // Distance buckets in km
+  final List<DistanceCategory> _distanceCategories = [
+    DistanceCategory.nearby, // 0-100 km
+    DistanceCategory.medium, // 100-200 km
+    DistanceCategory.far, // 200-500 km
+    DistanceCategory.national, // 500+ km
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(
+        length: 4, vsync: this); // 4 tabs: Nearby, Festivals, Quotes, Temples
     _loadInitialData();
   }
 
@@ -80,8 +96,39 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
     // Check for active festival
     _activeFestival = FestivalService.getCurrentFestival();
 
-    // Load videos
-    await _loadVideos();
+    // Get user location
+    await _loadUserLocation();
+
+    // Load all content
+    await Future.wait([
+      _loadVideos(),
+      _loadTemples(),
+      _loadQuotes(),
+      _loadUpcomingFestivals(),
+    ]);
+
+    // Initialize notifications
+    await DevotionalNotificationService.initialize();
+  }
+
+  Future<void> _loadUserLocation() async {
+    setState(() {
+      _locationLoading = true;
+    });
+
+    try {
+      // Try to get current location
+      _userLocation = await TempleService.getCurrentLocation();
+
+      // If that fails, try cached location
+      _userLocation ??= await TempleService.getCachedLocation();
+    } catch (e) {
+      debugPrint('Error loading location: $e');
+    }
+
+    setState(() {
+      _locationLoading = false;
+    });
   }
 
   Future<void> _loadVideos() async {
@@ -92,7 +139,9 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
     try {
       final videos = await DevotionalService.fetchDevotionalVideos(
         religion: _selectedReligion?.displayName.toLowerCase(),
-        distanceCategory: _selectedDistance == 'all' ? null : _selectedDistance,
+        distanceCategory: _selectedDistanceCategory.name,
+        userLat: _userLocation?.latitude,
+        userLng: _userLocation?.longitude,
       );
 
       setState(() {
@@ -106,11 +155,72 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
     }
   }
 
-  void _onDistanceChanged(String? distance) {
+  Future<void> _loadTemples() async {
+    try {
+      final temples = await TempleService.fetchTemples(
+        religion: _selectedReligion?.displayName.toLowerCase(),
+        distanceCategory: _selectedDistanceCategory,
+        userLat: _userLocation?.latitude,
+        userLng: _userLocation?.longitude,
+      );
+
+      setState(() {
+        _temples = temples;
+      });
+    } catch (e) {
+      debugPrint('Error loading temples: $e');
+    }
+  }
+
+  Future<void> _loadQuotes() async {
+    try {
+      final religionStr =
+          _selectedReligion?.displayName.toLowerCase() ?? 'hinduism';
+      final allQuotes = DevotionalQuote.getPredefinedQuotes(religionStr);
+
+      // Filter by religion if selected
+      final filteredQuotes = allQuotes;
+
+      setState(() {
+        _quotes = filteredQuotes;
+      });
+    } catch (e) {
+      debugPrint('Error loading quotes: $e');
+    }
+  }
+
+  Future<void> _loadUpcomingFestivals() async {
+    try {
+      final now = DateTime.now();
+      final allFestivals = Festival.getPredefinedFestivals(now.year);
+
+      // Get upcoming festivals (next 30 days)
+      final upcoming = allFestivals.where((f) {
+        final isUpcoming = f.startDate.isAfter(now) &&
+            f.startDate.isBefore(now.add(const Duration(days: 30)));
+        final matchesReligion = _selectedReligion == null ||
+            f.religion?.toLowerCase() ==
+                _selectedReligion!.displayName.toLowerCase();
+        return isUpcoming && matchesReligion;
+      }).toList();
+
+      upcoming.sort((a, b) => a.startDate.compareTo(b.startDate));
+
+      setState(() {
+        _upcomingFestivals = upcoming;
+      });
+    } catch (e) {
+      debugPrint('Error loading festivals: $e');
+    }
+  }
+
+  void _onDistanceChanged(DistanceCategory? category) {
+    if (category == null) return;
     setState(() {
-      _selectedDistance = distance;
+      _selectedDistanceCategory = category;
     });
     _loadVideos();
+    _loadTemples();
   }
 
   Future<void> _changeReligion() async {
@@ -124,7 +234,11 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
       setState(() {
         _selectedReligion = result;
       });
+      // Reload all content with new religion
       _loadVideos();
+      _loadTemples();
+      _loadQuotes();
+      _loadUpcomingFestivals();
     }
   }
 
@@ -138,6 +252,9 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
             // Header with religion selector
             _buildHeader(),
 
+            // Distance filter chips
+            _buildDistanceFilter(),
+
             // Tabs
             _buildTabs(),
 
@@ -146,15 +263,44 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // Videos Tab
-                  _buildVideosTab(),
-                  // Explore Tab
-                  _buildExploreTab(),
+                  // Nearby Tab - Videos filtered by distance
+                  _buildNearbyTab(),
+                  // Festivals Tab
+                  _buildFestivalsTab(),
+                  // Quotes Tab
+                  _buildQuotesTab(),
+                  // Temples Tab
+                  _buildTemplesTab(),
                 ],
               ),
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          // Navigate to upload screen
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UploadDevotionalVideoScreen(),
+            ),
+          );
+
+          if (result != null && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Video uploaded! Pending verification.'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Reload videos to potentially show the new video (if already verified)
+            _loadVideos();
+          }
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Upload Video'),
+        backgroundColor: const Color(0xFF9B59B6),
       ),
     );
   }
@@ -235,12 +381,79 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
 
           // Filter button
           IconButton(
-            onPressed: _showFilterBottomSheet,
-            icon: const Icon(Icons.tune, color: Colors.white),
+            onPressed: _showNotificationSettings,
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildDistanceFilter() {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      color: const Color(0xFF16213e),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _distanceCategories.length,
+        itemBuilder: (context, index) {
+          final category = _distanceCategories[index];
+          final isSelected = _selectedDistanceCategory == category;
+
+          return GestureDetector(
+            onTap: () => _onDistanceChanged(category),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF9B59B6)
+                    : const Color(0xFF1a1a2e),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected ? Colors.transparent : Colors.white24,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getDistanceIcon(category),
+                    color: isSelected ? Colors.white : Colors.white70,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${category.minKm.toInt()}-${category.maxKm == double.infinity ? '∞' : category.maxKm.toInt()} km',
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  IconData _getDistanceIcon(DistanceCategory category) {
+    switch (category) {
+      case DistanceCategory.nearby:
+        return Icons.near_me;
+      case DistanceCategory.medium:
+        return Icons.directions_car;
+      case DistanceCategory.far:
+        return Icons.train;
+      case DistanceCategory.national:
+        return Icons.flight;
+    }
   }
 
   Widget _buildTabs() {
@@ -252,55 +465,170 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
         indicatorWeight: 3,
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white54,
+        isScrollable: false,
+        labelPadding: EdgeInsets.zero,
         tabs: const [
           Tab(
-            icon: Icon(Icons.play_circle_fill),
-            text: 'Videos',
+            icon: Icon(Icons.location_on, size: 20),
+            text: 'Nearby',
           ),
           Tab(
-            icon: Icon(Icons.explore),
-            text: 'Explore',
+            icon: Icon(Icons.celebration, size: 20),
+            text: 'Festivals',
+          ),
+          Tab(
+            icon: Icon(Icons.format_quote, size: 20),
+            text: 'Quotes',
+          ),
+          Tab(
+            icon: Icon(Icons.temple_hindu, size: 20),
+            text: 'Temples',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildVideosTab() {
+  Widget _buildNearbyTab() {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFF9B59B6)),
       );
     }
 
+    if (_locationLoading) {
+      return _buildLocationLoadingState();
+    }
+
+    if (_userLocation == null) {
+      return _buildLocationPermissionState();
+    }
+
     if (_videos.isEmpty) {
       return _buildEmptyState();
     }
 
-    return PageView.builder(
-      controller: _pageController,
-      scrollDirection: Axis.vertical,
-      itemCount: _videos.length,
-      onPageChanged: (index) {
-        setState(() {
-          _currentVideoIndex = index;
-        });
-      },
-      itemBuilder: (context, index) {
-        return DevotionalVideoCard(
-          video: _videos[index],
-          isActive: index == _currentVideoIndex,
-        );
-      },
+    return Column(
+      children: [
+        // Current distance bucket indicator
+        Container(
+          padding: const EdgeInsets.all(12),
+          color: const Color(0xFF16213e).withOpacity(0.5),
+          child: Row(
+            children: [
+              Icon(
+                _getDistanceIcon(_selectedDistanceCategory),
+                color: const Color(0xFF9B59B6),
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Showing content within ${_selectedDistanceCategory.minKm.toInt()}-${_selectedDistanceCategory.maxKm == double.infinity ? '500+' : _selectedDistanceCategory.maxKm.toInt()} km',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Videos
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            scrollDirection: Axis.vertical,
+            itemCount: _videos.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentVideoIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return DevotionalVideoCard(
+                video: _videos[index],
+                isActive: index == _currentVideoIndex,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildExploreTab() {
+  Widget _buildLocationLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(color: Color(0xFF9B59B6)),
+          const SizedBox(height: 16),
+          Text(
+            'Getting your location...',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationPermissionState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.location_off,
+              size: 80,
+              color: Colors.white.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Location Required',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Enable location to discover devotional content near you',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadUserLocation,
+              icon: const Icon(Icons.location_on),
+              label: const Text('Enable Location'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9B59B6),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFestivalsTab() {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Festival Banner
+          // Active Festival Banner
           if (_activeFestival != null && _showFestivalBanner)
             FestivalBannerWidget(
               festival: _activeFestival!,
@@ -312,37 +640,28 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
               },
             ),
 
-          // Quote of the Day
-          const QuoteOfTheDayWidget(),
-
-          // Section: Trending
+          // Upcoming Festivals
           _buildSection(
-            title: '🔥 Trending',
-            subtitle: 'Popular devotional content',
-            child: _buildVideoGrid(_videos.take(4).toList()),
+            title: '🎉 Upcoming Festivals',
+            subtitle: 'Next 30 days',
+            child: _upcomingFestivals.isEmpty
+                ? _buildEmptyFestivalsMessage()
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _upcomingFestivals.length,
+                    itemBuilder: (context, index) {
+                      return _buildFestivalCard(_upcomingFestivals[index]);
+                    },
+                  ),
           ),
 
-          // Section: By Temple
-          _buildSection(
-            title: '🛕 Sacred Places',
-            subtitle: 'Videos from famous temples',
-            child: _buildTempleChips(),
-          ),
-
-          // Section: By Deity
-          if (_selectedReligion != null)
-            _buildSection(
-              title: '🙏 By Deity',
-              subtitle: 'Explore by deity',
-              child: _buildDeityChips(),
-            ),
-
-          // Section: Festival Content
+          // Festival-tagged Videos
           if (_activeFestival != null)
             _buildSection(
               title:
-                  '${_activeFestival!.iconEmoji} ${_activeFestival!.name} Special',
-              subtitle: 'Festival content',
+                  '${_activeFestival!.iconEmoji} ${_activeFestival!.name} Videos',
+              subtitle: 'Special festival content',
               child: _buildVideoGrid(
                 _videos
                     .where((v) => v.festivalTags.any((tag) =>
@@ -353,6 +672,497 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
             ),
 
           const SizedBox(height: 100),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyFestivalsMessage() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(
+            Icons.celebration_outlined,
+            size: 48,
+            color: Colors.white.withOpacity(0.3),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No upcoming festivals',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFestivalCard(Festival festival) {
+    final daysUntil = festival.startDate.difference(DateTime.now()).inDays;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213e),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: festival.color.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: festival.color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              festival.iconEmoji,
+              style: const TextStyle(fontSize: 24),
+            ),
+          ),
+        ),
+        title: Text(
+          festival.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              festival.description,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 12,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: festival.color.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                daysUntil == 0
+                    ? 'Today!'
+                    : daysUntil == 1
+                        ? 'Tomorrow'
+                        : 'In $daysUntil days',
+                style: TextStyle(
+                  color: festival.color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.notifications_outlined, color: Colors.white70),
+          onPressed: () => _scheduleNotificationForFestival(festival),
+        ),
+        onTap: () => _filterByFestival(festival),
+      ),
+    );
+  }
+
+  Widget _buildQuotesTab() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Quote of the Day - featured
+          const QuoteOfTheDayWidget(),
+
+          // All Quotes section
+          _buildSection(
+            title: '📜 Spiritual Wisdom',
+            subtitle: 'Inspirational quotes',
+            child: _quotes.isEmpty
+                ? _buildEmptyQuotesMessage()
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _quotes.take(10).length,
+                    itemBuilder: (context, index) {
+                      return _buildQuoteCard(_quotes[index]);
+                    },
+                  ),
+          ),
+
+          const SizedBox(height: 100),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyQuotesMessage() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(
+            Icons.format_quote,
+            size: 48,
+            color: Colors.white.withOpacity(0.3),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No quotes available',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuoteCard(DevotionalQuote quote) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213e),
+        borderRadius: BorderRadius.circular(12),
+        border: const Border(
+          left: BorderSide(
+            color: Color(0xFF9B59B6),
+            width: 3,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                _getReligionIcon(quote.religion),
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  quote.author ?? quote.source ?? 'Unknown',
+                  style: const TextStyle(
+                    color: Color(0xFF9B59B6),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '"${quote.text}"',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              height: 1.5,
+            ),
+          ),
+          if (quote.source != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              '- ${quote.source}',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTemplesTab() {
+    if (_locationLoading) {
+      return _buildLocationLoadingState();
+    }
+
+    if (_userLocation == null) {
+      return _buildLocationPermissionState();
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Distance indicator
+          Container(
+            padding: const EdgeInsets.all(12),
+            color: const Color(0xFF16213e).withOpacity(0.5),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.temple_hindu,
+                  color: Color(0xFF9B59B6),
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Temples within ${_selectedDistanceCategory.minKm.toInt()}-${_selectedDistanceCategory.maxKm == double.infinity ? '500+' : _selectedDistanceCategory.maxKm.toInt()} km',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Temples list
+          _buildSection(
+            title: '🛕 Sacred Places',
+            subtitle: 'Temples and religious sites near you',
+            child: _temples.isEmpty
+                ? _buildEmptyTemplesMessage()
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _temples.length,
+                    itemBuilder: (context, index) {
+                      return _buildTempleCard(_temples[index]);
+                    },
+                  ),
+          ),
+
+          const SizedBox(height: 100),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyTemplesMessage() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(
+            Icons.temple_hindu,
+            size: 48,
+            color: Colors.white.withOpacity(0.3),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No temples found in this distance range',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try expanding your search range',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.4),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTempleCard(Temple temple) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213e),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Temple image
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Stack(
+              children: [
+                Image.network(
+                  temple.imageUrl ?? 'https://via.placeholder.com/300x150',
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 150,
+                      color: const Color(0xFF1a1a2e),
+                      child: const Center(
+                        child: Icon(
+                          Icons.temple_hindu,
+                          color: Colors.white30,
+                          size: 60,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // Verified badge
+                if (temple.isVerified)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified, color: Colors.white, size: 12),
+                          SizedBox(width: 4),
+                          Text(
+                            'Verified',
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Distance badge
+                if (temple.distanceKm != null)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.location_on,
+                              color: Colors.white, size: 12),
+                          const SizedBox(width: 4),
+                          Text(
+                            temple.formattedDistance,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Temple details
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        temple.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    if (temple.rating != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            temple.rating!.toStringAsFixed(1),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  temple.deity ?? 'Sacred Place',
+                  style: const TextStyle(
+                    color: Color(0xFF9B59B6),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${temple.city}, ${temple.state}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 12,
+                  ),
+                ),
+                if (temple.timings != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        color: Colors.white.withOpacity(0.5),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        temple.timings!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Festival tags
+                if (temple.festivalTags.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: temple.festivalTags.take(3).map((tag) {
+                      return FestivalTagWidget(festivalTag: tag);
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -527,94 +1337,6 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
     );
   }
 
-  Widget _buildTempleChips() {
-    final temples = _videos
-        .where((v) => v.templeName != null && v.templeName!.isNotEmpty)
-        .map((v) => v.templeName!)
-        .toSet()
-        .take(6)
-        .toList();
-
-    if (temples.isEmpty) {
-      return Text(
-        'No temples available',
-        style: TextStyle(color: Colors.white.withOpacity(0.5)),
-      );
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: temples.map((temple) {
-        return GestureDetector(
-          onTap: () => _filterByTemple(temple),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF16213e),
-              borderRadius: BorderRadius.circular(20),
-              border:
-                  Border.all(color: const Color(0xFF9B59B6).withOpacity(0.5)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('🛕', style: TextStyle(fontSize: 14)),
-                const SizedBox(width: 6),
-                Text(
-                  temple,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildDeityChips() {
-    final deities = DevotionalService.getDeitiesByReligion(
-      _selectedReligion?.displayName ?? '',
-    );
-
-    if (deities.isEmpty) {
-      return Text(
-        'No deities available',
-        style: TextStyle(color: Colors.white.withOpacity(0.5)),
-      );
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: deities.take(8).map((deity) {
-        return GestureDetector(
-          onTap: () => _filterByDeity(deity),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF16213e),
-              borderRadius: BorderRadius.circular(20),
-              border:
-                  Border.all(color: const Color(0xFFFF6B00).withOpacity(0.5)),
-            ),
-            child: Text(
-              deity,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -654,7 +1376,7 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
     );
   }
 
-  void _showFilterBottomSheet() {
+  void _showNotificationSettings() {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF16213e),
@@ -664,129 +1386,170 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
+            return FutureBuilder<List<bool>>(
+              future: Future.wait([
+                DevotionalNotificationService.isQuoteNotificationsEnabled(),
+                DevotionalNotificationService.isFestivalNotificationsEnabled(),
+              ]),
+              builder: (context, snapshot) {
+                final quoteEnabled = snapshot.data?[0] ?? false;
+                final festivalEnabled = snapshot.data?[1] ?? false;
+
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.tune, color: Color(0xFF9B59B6)),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Filter Videos',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      // Header
+                      Row(
+                        children: [
+                          const Icon(Icons.notifications,
+                              color: Color(0xFF9B59B6)),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Notification Settings',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          setModalState(() {
-                            _selectedDistance = null;
-                          });
+                      const SizedBox(height: 24),
+
+                      // Daily Quote notification
+                      _buildNotificationToggle(
+                        title: 'Daily Quote',
+                        subtitle:
+                            'Receive a spiritual quote every morning at 7 AM',
+                        icon: Icons.format_quote,
+                        value: quoteEnabled,
+                        onChanged: (value) async {
+                          await DevotionalNotificationService
+                              .setQuoteNotificationsEnabled(value);
+                          setModalState(() {});
+                          if (value) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Daily quote notification enabled! ✨'),
+                                  backgroundColor: Color(0xFF9B59B6),
+                                ),
+                              );
+                            }
+                          }
                         },
-                        child: const Text(
-                          'Reset',
-                          style: TextStyle(color: Color(0xFF9B59B6)),
-                        ),
                       ),
+
+                      const SizedBox(height: 16),
+
+                      // Festival notifications
+                      _buildNotificationToggle(
+                        title: 'Festival Alerts',
+                        subtitle:
+                            'Get notified about upcoming religious festivals',
+                        icon: Icons.celebration,
+                        value: festivalEnabled,
+                        onChanged: (value) async {
+                          await DevotionalNotificationService
+                              .setFestivalNotificationsEnabled(value);
+                          setModalState(() {});
+                          if (value) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Festival notifications enabled! 🎉'),
+                                  backgroundColor: Color(0xFF9B59B6),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
                     ],
                   ),
-                  const SizedBox(height: 20),
-
-                  // Distance filter
-                  const Text(
-                    'Distance',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _distanceCategories.map((distance) {
-                      final isSelected = _selectedDistance == distance;
-                      return GestureDetector(
-                        onTap: () {
-                          setModalState(() {
-                            _selectedDistance = distance;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF9B59B6)
-                                : const Color(0xFF1a1a2e),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected
-                                  ? Colors.transparent
-                                  : Colors.white24,
-                            ),
-                          ),
-                          child: Text(
-                            distance == 'all'
-                                ? 'All'
-                                : distance[0].toUpperCase() +
-                                    distance.substring(1),
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.white70,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Apply button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _onDistanceChanged(_selectedDistance);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9B59B6),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Apply Filters',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
+                );
+              },
             );
           },
         );
       },
     );
+  }
+
+  Widget _buildNotificationToggle({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool value,
+    required Function(bool) onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1a1a2e),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFF9B59B6).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: const Color(0xFF9B59B6)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: const Color(0xFF9B59B6),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _scheduleNotificationForFestival(Festival festival) async {
+    await DevotionalNotificationService.showFestivalNotification(festival);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Notification set for ${festival.name}! 🔔'),
+          backgroundColor: festival.color,
+        ),
+      );
+    }
   }
 
   void _filterByFestival(Festival festival) {
@@ -799,24 +1562,6 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
     );
   }
 
-  void _filterByTemple(String temple) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Showing videos from $temple'),
-        backgroundColor: const Color(0xFF9B59B6),
-      ),
-    );
-  }
-
-  void _filterByDeity(String deity) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Showing $deity videos'),
-        backgroundColor: const Color(0xFFFF6B00),
-      ),
-    );
-  }
-
   String _formatViews(int views) {
     if (views >= 1000000) {
       return '${(views / 1000000).toStringAsFixed(1)}M';
@@ -824,6 +1569,23 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
       return '${(views / 1000).toStringAsFixed(1)}K';
     }
     return views.toString();
+  }
+
+  String _getReligionIcon(String religion) {
+    switch (religion.toLowerCase()) {
+      case 'hinduism':
+        return '🕉️';
+      case 'islam':
+        return '☪️';
+      case 'christianity':
+        return '✝️';
+      case 'sikhism':
+        return '🙏';
+      case 'buddhism':
+        return '☸️';
+      default:
+        return '🙏';
+    }
   }
 }
 

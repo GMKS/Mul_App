@@ -9,6 +9,8 @@ import 'core/app_state.dart';
 import 'core/route_manager.dart';
 import 'core/app_logger.dart';
 import 'controllers/local_alerts_controller.dart';
+import 'controllers/event_controller.dart';
+import 'controllers/devotional_controller.dart';
 import 'services/notification_service.dart';
 import 'services/connectivity_service.dart';
 import 'screens/splash_screen.dart';
@@ -41,6 +43,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
         ChangeNotifierProvider(create: (_) => LocalAlertsController()),
+        ChangeNotifierProvider(create: (_) => EventController()),
+        ChangeNotifierProvider(create: (_) => DevotionalController()),
       ],
       child: const MyApp(),
     ),

@@ -1,0 +1,21 @@
+=== COPY THIS SQL FOR POLICY #1 (Public Read Access) ===
+
+CREATE POLICY "Public can read devotional videos"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'devotional-content');
+
+=== COPY THIS SQL FOR POLICY #2 (Authenticated Upload) ===
+
+CREATE POLICY "Authenticated users can upload videos"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'devotional-content');
+
+=== INSTRUCTIONS ===
+1. Delete all the SQL in the "Policy definition" section
+2. Copy the SQL for Policy #1 above
+3. Paste it into the "Policy definition" box
+4. Keep SELECT checkbox checked
+5. Click "Review" then "Save"
+6. Repeat for Policy #2 (check INSERT checkbox instead)

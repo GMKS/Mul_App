@@ -184,20 +184,93 @@ enum Religion {
   }
 }
 
-/// Distance category enum
+/// Distance category enum with km-based buckets
 enum DistanceCategory {
-  nearby,
-  regional,
-  national;
+  nearby, // 0-100 km
+  medium, // 100-200 km
+  far, // 200-500 km
+  national; // 500+ km
 
   String get displayName {
     switch (this) {
       case DistanceCategory.nearby:
+        return '0-100 km';
+      case DistanceCategory.medium:
+        return '100-200 km';
+      case DistanceCategory.far:
+        return '200-500 km';
+      case DistanceCategory.national:
+        return '500+ km';
+    }
+  }
+
+  String get shortName {
+    switch (this) {
+      case DistanceCategory.nearby:
         return 'Nearby';
-      case DistanceCategory.regional:
+      case DistanceCategory.medium:
         return 'Regional';
+      case DistanceCategory.far:
+        return 'Far';
       case DistanceCategory.national:
         return 'National';
+    }
+  }
+
+  /// Get distance category from km distance
+  static DistanceCategory fromKm(double km) {
+    if (km <= 100) return DistanceCategory.nearby;
+    if (km <= 200) return DistanceCategory.medium;
+    if (km <= 500) return DistanceCategory.far;
+    return DistanceCategory.national;
+  }
+
+  /// Get max km for this category
+  double get maxKm {
+    switch (this) {
+      case DistanceCategory.nearby:
+        return 100;
+      case DistanceCategory.medium:
+        return 200;
+      case DistanceCategory.far:
+        return 500;
+      case DistanceCategory.national:
+        return double.infinity;
+    }
+  }
+
+  /// Get min km for this category
+  double get minKm {
+    switch (this) {
+      case DistanceCategory.nearby:
+        return 0;
+      case DistanceCategory.medium:
+        return 100;
+      case DistanceCategory.far:
+        return 200;
+      case DistanceCategory.national:
+        return 500;
+    }
+  }
+
+  static DistanceCategory? fromString(String? value) {
+    if (value == null) return null;
+    switch (value.toLowerCase()) {
+      case 'nearby':
+      case '0-100':
+        return DistanceCategory.nearby;
+      case 'medium':
+      case 'regional':
+      case '100-200':
+        return DistanceCategory.medium;
+      case 'far':
+      case '200-500':
+        return DistanceCategory.far;
+      case 'national':
+      case '500+':
+        return DistanceCategory.national;
+      default:
+        return null;
     }
   }
 }

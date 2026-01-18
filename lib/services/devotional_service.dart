@@ -20,6 +20,8 @@ class DevotionalService {
     String? distanceCategory,
     String? language,
     List<String>? festivalTags,
+    double? userLat,
+    double? userLng,
     int limit = 20,
     int offset = 0,
   }) async {

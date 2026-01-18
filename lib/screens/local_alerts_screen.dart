@@ -54,6 +54,22 @@ class _LocalAlertsScreenState extends State<LocalAlertsScreen> {
           style: AppTextStyles.headline2.copyWith(color: Colors.white),
         ),
         actions: [
+          // Debug button to test notification
+          IconButton(
+            icon: const Icon(Icons.add_alert, color: Colors.white),
+            onPressed: () {
+              context.read<LocalAlertsController>().addAlertFromNotification({
+                'title': 'Test Alert',
+                'customKey': 'అన్ని మందులపై 20% తగ్గింపు - 50% తగ్గింపు',
+                'area': 'Test Area',
+                'locality': 'Test Locality',
+                'category': 'offer',
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Test alert added!')),
+              );
+            },
+          ),
           PopupMenuButton<AlertDistanceFilter>(
             icon: const Icon(Icons.filter_list, color: Colors.white),
             onSelected: (filter) {
@@ -82,6 +98,9 @@ class _LocalAlertsScreenState extends State<LocalAlertsScreen> {
       ),
       body: Consumer<LocalAlertsController>(
         builder: (context, controller, _) {
+          debugPrint(
+              '🖼️ UI REBUILD: isLoading=${controller.isLoading}, filteredAlerts=${controller.filteredAlerts.length}, allAlerts=${controller.allAlerts.length}');
+
           if (controller.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }

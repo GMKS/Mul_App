@@ -14,8 +14,9 @@ enum AlertDistanceFilter {
 class LocalAlertsController extends ChangeNotifier {
   final LocalAlertsRepository _repository = LocalAlertsRepository();
 
-  List<LocalAlert> allAlerts = [];
-  List<LocalAlert> runtimeAlerts = [];
+  List<LocalAlert> _loadedAlerts = []; // Alerts from repository
+  List<LocalAlert> runtimeAlerts = []; // Alerts from FCM notifications
+  List<LocalAlert> allAlerts = []; // Combined alerts
   List<LocalAlert> filteredAlerts = [];
   bool isLoading = false;
   String? error;
@@ -24,22 +25,60 @@ class LocalAlertsController extends ChangeNotifier {
 
   // Add alert from FCM notification data
   void addAlertFromNotification(Map<String, dynamic> data) {
+    debugPrint('🔥🔥 addAlertFromNotification called with data: $data');
+
+    // Extract message from customKey (your Telugu text) or fall back to body
+    String message = '';
+    if (data['customKey'] != null && data['customKey'].toString().isNotEmpty) {
+      message = data['customKey'].toString();
+      debugPrint('✅ Using customKey: $message');
+    } else if (data['body'] != null && data['body'].toString().isNotEmpty) {
+      message = data['body'].toString();
+      debugPrint('⚠️ Using body: $message');
+    } else if (data['message'] != null) {
+      message = data['message'].toString();
+      debugPrint('⚠️ Using message: $message');
+    }
+
+    debugPrint('🔥 Final message to display: $message');
+
+    final title = data['title']?.toString() ?? 'Alert';
+    final category = data['category']?.toString() ?? 'announcement';
+
+    // Check if an alert with the same title and message already exists
+    final isDuplicate = runtimeAlerts.any((existingAlert) =>
+        existingAlert.title == title &&
+        existingAlert.message == message &&
+        existingAlert.category == category);
+
+    if (isDuplicate) {
+      debugPrint('⚠️ Duplicate alert detected - skipping');
+      return;
+    }
+
     final alert = LocalAlert(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: data['title'] ?? 'Alert',
-      message: data['customKey'] ?? data['body'] ?? '',
-      area: data['area'] ?? '',
-      locality: data['locality'] ?? '',
+      title: title,
+      message: message,
+      area: data['area']?.toString() ?? '',
+      locality: data['locality']?.toString() ?? '',
       distanceKm: 0,
       startTime: DateTime.now(),
       expiryTime: null,
       icon: null,
-      category: data['category'] ?? 'announcement',
+      category: category,
     );
+
+    debugPrint('🔥 Created alert: ${alert.title} - ${alert.message}');
     runtimeAlerts.insert(0, alert);
+    debugPrint('🔥 runtimeAlerts count: ${runtimeAlerts.length}');
     _mergeAlerts();
+    debugPrint('🔥 allAlerts count after merge: ${allAlerts.length}');
     applyFilter(selectedFilter);
+    debugPrint(
+        '🔥 filteredAlerts count after filter: ${filteredAlerts.length}');
     notifyListeners();
+    debugPrint('✅ Listeners notified!');
   }
 
   Future<void> loadAlerts({
@@ -51,12 +90,12 @@ class LocalAlertsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      allAlerts = await _repository.fetchLocalAlerts(
+      _loadedAlerts = await _repository.fetchLocalAlerts(
         city: city,
         state: state,
       );
-      allAlerts = allAlerts.where((alert) => alert.isActive).toList();
-      allAlerts.sort((a, b) => b.startTime.compareTo(a.startTime));
+      _loadedAlerts = _loadedAlerts.where((alert) => alert.isActive).toList();
+      _loadedAlerts.sort((a, b) => b.startTime.compareTo(a.startTime));
       _mergeAlerts();
       applyFilter(selectedFilter);
     } catch (e) {
@@ -68,8 +107,11 @@ class LocalAlertsController extends ChangeNotifier {
   }
 
   void _mergeAlerts() {
-    // Combine loaded alerts and runtime alerts, with runtime alerts first
-    allAlerts = [...runtimeAlerts, ...allAlerts];
+    // Combine runtime alerts (FCM) and loaded alerts (repository)
+    // Runtime alerts first (most recent)
+    allAlerts = [...runtimeAlerts, ..._loadedAlerts];
+    debugPrint(
+        '📊 Merged alerts: ${runtimeAlerts.length} runtime + ${_loadedAlerts.length} loaded = ${allAlerts.length} total');
   }
 
   void applyFilter(AlertDistanceFilter filter) {

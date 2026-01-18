@@ -230,6 +230,7 @@ Shared from Regional Shorts App 🙏''';
               children: [
                 // Header
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -260,7 +261,6 @@ Shared from Regional Shorts App 🙏''';
                         ],
                       ),
                     ),
-                    const Spacer(),
                     Text(
                       _getReligionEmoji(_userReligion ?? ''),
                       style: const TextStyle(fontSize: 24),

@@ -26,6 +26,7 @@ import '../theme/app_theme.dart';
 import '../widgets/custom_cards.dart';
 import '../core/route_manager.dart';
 import 'devotional/devotional_feed_screen.dart';
+import '../widgets/enhanced_home_feed.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -421,6 +422,26 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildOriginalHomeLayout() {
+    return EnhancedHomeFeed(
+      onRefresh: () async {
+        // Optionally reload user data or videos
+        await _loadUserData();
+      },
+      onQuickAction: (action) {
+        // Handle quick actions
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$action tapped!')),
+        );
+      },
+      onCategoryTap: (index) {
+        setState(() {
+          _selectedCategoryIndex = index;
+        });
+      },
+    );
+  }
+
+  Widget _buildClassicHomeLayout() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(

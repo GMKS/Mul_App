@@ -14,6 +14,33 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('Title: ${message.notification?.title}');
   debugPrint('Body: ${message.notification?.body}');
   debugPrint('Payload: ${message.data}');
+
+  // Store the notification data to be processed when app opens
+  if (message.data.isNotEmpty) {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final List<String> pendingAlerts =
+          prefs.getStringList('pending_alerts') ?? [];
+
+      // Create alert data JSON string
+      final alertData = {
+        'title':
+            message.data['title'] ?? message.notification?.title ?? 'Alert',
+        'body': message.data['body'] ?? message.notification?.body ?? '',
+        'customKey': message.data['customKey'],
+        'area': message.data['area'] ?? '',
+        'locality': message.data['locality'] ?? '',
+        'category': message.data['category'] ?? 'announcement',
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      pendingAlerts.add(alertData.toString());
+      await prefs.setStringList('pending_alerts', pendingAlerts);
+      debugPrint('✅ Background alert saved for later processing');
+    } catch (e) {
+      debugPrint('⚠️ Failed to save background alert: $e');
+    }
+  }
 }
 
 class NotificationService {
@@ -147,16 +174,20 @@ class NotificationService {
     debugPrint('📩 Foreground message received: ${message.messageId}');
     debugPrint('Title: ${message.notification?.title}');
     debugPrint('Body: ${message.notification?.body}');
-    debugPrint('Payload: ${message.data}');
+    debugPrint('🔥 RAW DATA: ${message.data}');
+    debugPrint('🔥 CustomKey value: ${message.data['customKey']}');
 
-    // Show local notification
-    if (message.notification != null) {
-      await _showLocalNotification(
-        title: message.notification!.title ?? 'New Alert',
-        body: message.notification!.body ?? '',
-        payload: message.data.toString(),
-      );
-    }
+    // Show local notification with customKey if available
+    final notificationTitle = message.notification?.title ?? 'New Alert';
+    final notificationBody = message.data['customKey']?.toString() ??
+        message.notification?.body ??
+        'You have a new alert';
+
+    await _showLocalNotification(
+      title: notificationTitle,
+      body: notificationBody,
+      payload: message.data.toString(),
+    );
 
     // Store as local alert (if context is available)
     _addAlertToLocalAlerts(message);
@@ -170,12 +201,22 @@ class NotificationService {
       try {
         final controller =
             Provider.of<LocalAlertsController>(context, listen: false);
-        controller.addAlertFromNotification({
-          'title': message.notification?.title,
-          'body': message.notification?.body,
+
+        // Prepare alert data - prioritize custom data fields
+        final alertData = {
+          'title':
+              message.data['title'] ?? message.notification?.title ?? 'Alert',
+          'body': message.data['body'] ?? message.notification?.body ?? '',
+          'customKey': message.data['customKey'], // Your custom Telugu text
+          'area': message.data['area'] ?? '',
+          'locality': message.data['locality'] ?? '',
+          'category': message.data['category'] ?? 'announcement',
           ...message.data,
-        });
+        };
+
+        controller.addAlertFromNotification(alertData);
         debugPrint('✅ Alert added to LocalAlertsController');
+        debugPrint('Alert data: $alertData');
       } catch (e) {
         debugPrint('⚠️ Could not add alert to LocalAlertsController: $e');
       }
@@ -189,6 +230,9 @@ class NotificationService {
   Future<void> _handleNotificationTap(RemoteMessage message) async {
     debugPrint('🔔 Notification tapped: ${message.messageId}');
     debugPrint('Payload: ${message.data}');
+
+    // Add alert to LocalAlertsController when notification is tapped
+    _addAlertToLocalAlerts(message);
 
     // TODO: Navigate based on notification type
     // Example:
