@@ -11,13 +11,14 @@ import 'business_teasers_carousel.dart';
 import 'gamified_streaks_widget.dart';
 import 'quick_actions_widget.dart';
 import 'skeleton_loaders.dart';
+import '../screens/business_feed_screen.dart';
+import '../core/route_manager.dart';
 
 class EnhancedHomeFeed extends StatefulWidget {
   final VoidCallback? onRefresh;
   final Function(String)? onQuickAction;
   final VoidCallback? onAddStory;
   final Function(StoryItem)? onStoryTap;
-  final Function(int)? onCategoryTap;
 
   const EnhancedHomeFeed({
     super.key,
@@ -25,7 +26,6 @@ class EnhancedHomeFeed extends StatefulWidget {
     this.onQuickAction,
     this.onAddStory,
     this.onStoryTap,
-    this.onCategoryTap,
   });
 
   @override
@@ -252,7 +252,26 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
     required int index,
   }) {
     return GestureDetector(
-      onTap: () => widget.onCategoryTap?.call(index),
+      onTap: () {
+        // Navigate based on category index
+        if (index == 0) {
+          // Regional category
+          Navigator.pushNamed(context, RouteManager.regionalFeed);
+        } else if (index == 1) {
+          // Business category - Navigate to Business Feed
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BusinessFeedScreen(),
+            ),
+          );
+        } else {
+          // Devotional or other categories - show coming soon
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$title content coming soon!')),
+          );
+        }
+      },
       child: Container(
         height: 90,
         decoration: BoxDecoration(

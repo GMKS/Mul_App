@@ -10,6 +10,8 @@ import '../../../core/app_state.dart';
 import '../../../screens/cab_services_screen.dart';
 import '../../../screens/local_alerts_screen.dart';
 import '../../../screens/events/event_list_screen.dart';
+import '../../../screens/jobs_screen.dart';
+import '../../../screens/services_directory_screen.dart';
 import '../../../services/auth_service.dart';
 import '../../../screens/login_screen.dart';
 import '../models/models.dart';
@@ -257,6 +259,24 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
         context,
         MaterialPageRoute(
           builder: (context) => const EventListScreen(),
+        ),
+      );
+    } else if (title == 'Jobs & Opportunities') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const JobsScreen(),
+        ),
+      );
+    } else if (title == 'Services Directory') {
+      final appState = context.read<AppState>();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ServicesDirectoryScreen(
+            userCity: appState.selectedCity,
+            userState: appState.selectedState,
+          ),
         ),
       );
     } else {

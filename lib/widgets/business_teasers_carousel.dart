@@ -1,9 +1,12 @@
 /// Business Teasers Carousel Widget
 /// Sponsored business cards with clickable CTAs
+/// Integrated with enhanced BusinessModel
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math';
+import '../models/business_model.dart';
+import '../screens/business_profile_screen.dart';
 
 class BusinessTeaser {
   final String id;
@@ -20,6 +23,7 @@ class BusinessTeaser {
   final bool isSponsored;
   final double? rating;
   final int? reviewCount;
+  final BusinessModel? fullBusinessModel; // Link to full model
 
   BusinessTeaser({
     required this.id,
@@ -36,7 +40,38 @@ class BusinessTeaser {
     this.isSponsored = false,
     this.rating,
     this.reviewCount,
+    this.fullBusinessModel,
   });
+
+  // Convert to full BusinessModel for profile screen
+  BusinessModel toBusinessModel() {
+    if (fullBusinessModel != null) return fullBusinessModel!;
+
+    return BusinessModel(
+      id: id,
+      name: businessName,
+      tagline: tagline,
+      description: description ?? 'No description available',
+      category: 'General',
+      emoji: emoji,
+      logoUrl: logoUrl,
+      address: 'Address not available',
+      city: 'City',
+      state: 'State',
+      phoneNumber: phoneNumber ?? '0000000000',
+      whatsappNumber: phoneNumber,
+      isApproved: true,
+      isVerified: isVerified,
+      rating: rating,
+      reviewCount: reviewCount,
+      ownerId: 'system',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      isSponsored: isSponsored,
+      ctaText: ctaText,
+      ctaLink: ctaLink,
+    );
+  }
 }
 
 class BusinessTeasersCarousel extends StatefulWidget {
@@ -285,7 +320,18 @@ class _BusinessTeasersCarouselState extends State<BusinessTeasersCarousel> {
         vertical: isActive ? 0 : 12,
       ),
       child: GestureDetector(
-        onTap: () => widget.onBusinessTap?.call(business),
+        onTap: () {
+          // Open full business profile screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BusinessProfileScreen(
+                business: business.toBusinessModel(),
+              ),
+            ),
+          );
+          widget.onBusinessTap?.call(business);
+        },
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

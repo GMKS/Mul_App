@@ -18,6 +18,7 @@ import 'language_selection_screen.dart';
 import 'region_selection_screen.dart';
 import 'cab_services_screen.dart';
 import 'local_alerts_screen.dart';
+import 'jobs_screen.dart';
 import 'settings_screen.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
@@ -27,6 +28,7 @@ import '../widgets/custom_cards.dart';
 import '../core/route_manager.dart';
 import 'devotional/devotional_feed_screen.dart';
 import '../widgets/enhanced_home_feed.dart';
+import 'business_feed_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -433,11 +435,6 @@ class _HomeScreenState extends State<HomeScreen>
           SnackBar(content: Text('$action tapped!')),
         );
       },
-      onCategoryTap: (index) {
-        setState(() {
-          _selectedCategoryIndex = index;
-        });
-      },
     );
   }
 
@@ -548,15 +545,11 @@ class _HomeScreenState extends State<HomeScreen>
             color: AppColors.category2,
             icon: Icons.business_center,
             onTap: () {
-              print('🟠 Business card tapped');
-              setState(() {
-                _selectedCategoryIndex = 1;
-              });
-              // Show a snackbar to confirm tap is working
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Opening Business videos...'),
-                  duration: Duration(seconds: 1),
+              print('🟠 Business card tapped - Opening Business Feed');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BusinessFeedScreen(),
                 ),
               );
             },
@@ -712,6 +705,13 @@ class _HomeScreenState extends State<HomeScreen>
                     context,
                     MaterialPageRoute(
                       builder: (context) => const LocalAlertsScreen(),
+                    ),
+                  );
+                } else if (service['title'] == 'Jobs & Opportunities') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const JobsScreen(),
                     ),
                   );
                 } else {
@@ -902,6 +902,14 @@ class _HomeScreenState extends State<HomeScreen>
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const LocalAlertsScreen(),
+                              ),
+                            );
+                          } else if (service['title'] ==
+                              'Jobs & Opportunities') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const JobsScreen(),
                               ),
                             );
                           } else {
