@@ -1,0 +1,229 @@
+{
+  "@@locale": "en",
+  
+  "appTitle": "My City App",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+
+  "regional": "Regional",
+  "business": "Business",
+  "devotional": "Devotional",
+  "videos": "Videos",
+  "services": "Services",
+
+  "cabServices": "Cab Services",
+  "localAlerts": "Local Alerts",
+  "eventsAndFestivals": "Events & Festivals",
+  "emergencyServices": "Emergency Services",
+  "jobsAndOpportunities": "Jobs & Opportunities",
+  "educationCorner": "Education Corner",
+  "marketPrices": "Market Prices",
+  "marketplaceAndClassifieds": "Marketplace & Classifieds",
+  "communityHelp": "Community Help",
+  "homeServices": "Home Services",
+  "feedbackAndSuggestions": "Feedback & Suggestions",
+  "servicesDirectory": "Services Directory",
+
+  "buySellRent": "Buy/Sell/Rent",
+  "jobsAndGigs": "Jobs & Gigs",
+  "servicesOffered": "Services Offered",
+  "helpAndSupport": "Help & Support",
+  "reportIssues": "Report Issues",
+  "civicServices": "Civic Services",
+  "billPayments": "Bill Payments",
+  "cleaningAndRepair": "Cleaning & Repair",
+  "homeDelivery": "Home Delivery",
+  "laundryAndTailoring": "Laundry & Tailoring",
+  "communityPolls": "Community Polls",
+  "feedback": "Feedback",
+  "suggestions": "Suggestions",
+
+  "bloodDonation": "Blood Donation",
+  "volunteerOpportunities": "Volunteer Opportunities",
+  "helpRequests": "Help Requests",
+  "garbageCollection": "Garbage Collection",
+  "potholesAndRoads": "Potholes & Roads",
+  "waterSupply": "Water Supply",
+  "streetLights": "Street Lights",
+  "governmentSchemes": "Government Schemes",
+  "municipalityContacts": "Municipality Contacts",
+
+  "furniture": "Furniture",
+  "electronics": "Electronics",
+  "vehicles": "Vehicles",
+  "realEstate": "Real Estate",
+  "allCategories": "All Categories",
+
+  "urgent": "URGENT",
+  "required": "REQUIRED",
+  "available": "Available",
+  "notAvailable": "Not Available",
+  "completed": "Completed",
+  "inProgress": "In Progress",
+  "reported": "Reported",
+  "acknowledged": "Acknowledged",
+  "resolved": "Resolved",
+
+  "call": "Call",
+  "book": "Book",
+  "apply": "Apply",
+  "contact": "Contact",
+  "viewDetails": "View Details",
+  "share": "Share",
+  "report": "Report",
+  "cancel": "Cancel",
+  "submit": "Submit",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "ok": "OK",
+  "yes": "Yes",
+  "no": "No",
+  "search": "Search",
+  "filter": "Filter",
+  "sort": "Sort",
+
+  "kmAway": "{distance} km away",
+  "@kmAway": {
+    "description": "Distance in kilometers",
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+
+  "perHour": "₹{amount}/hour",
+  "@perHour": {
+    "description": "Hourly rate",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+
+  "perKg": "₹{amount}/kg",
+  "@perKg": {
+    "description": "Price per kilogram",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+
+  "rating": "{rating} ★",
+  "@rating": {
+    "description": "Star rating",
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+
+  "yearsExperience": "{years} years experience",
+  "@yearsExperience": {
+    "description": "Years of experience",
+    "placeholders": {
+      "years": {
+        "type": "String"
+      }
+    }
+  },
+
+  "votes": "{count} votes",
+  "@votes": {
+    "description": "Vote count",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+
+  "postVideo": "Post Video",
+  "quickAction": "Quick Action",
+  "comingSoon": "Coming Soon",
+  "loading": "Loading...",
+  "noDataAvailable": "No data available",
+  "errorOccurred": "An error occurred",
+  "tryAgain": "Try Again",
+
+  "selectLanguage": "Select Language",
+  "primaryLanguage": "Primary Language",
+  "secondaryLanguage": "Secondary Language (Optional)",
+  "selectRegion": "Select Region",
+  "selectState": "Select State",
+  "selectCity": "Select City",
+
+  "login": "Login",
+  "signup": "Sign Up",
+  "logout": "Logout",
+  "profile": "Profile",
+  "settings": "Settings",
+  "notifications": "Notifications",
+  "help": "Help",
+  "about": "About",
+  "termsAndConditions": "Terms and Conditions",
+  "privacyPolicy": "Privacy Policy",
+
+  "english": "English",
+  "telugu": "Telugu",
+  "hindi": "Hindi",
+  "tamil": "Tamil",
+  "kannada": "Kannada",
+  "malayalam": "Malayalam",
+  "bengali": "Bengali",
+  "marathi": "Marathi",
+  "gujarati": "Gujarati",
+  "punjabi": "Punjabi",
+
+  "deepCleaning": "Deep Cleaning",
+  "pestControl": "Pest Control",
+  "acRepair": "AC Repair",
+  "plumbing": "Plumbing",
+  "electrical": "Electrical Work",
+  "carpentry": "Carpentry",
+  "painting": "Painting",
+  "groceries": "Groceries",
+  "medicines": "Medicines",
+  "milk": "Milk",
+  "lpgGas": "LPG Gas",
+  "waterCans": "Water Cans",
+  "washAndIron": "Wash & Iron",
+  "dryCleaning": "Dry Cleaning",
+  "stitching": "Stitching",
+  "alterations": "Alterations",
+
+  "createPoll": "Create Poll",
+  "submitFeedback": "Submit Feedback",
+  "suggestFeature": "Suggest Feature",
+  "appExperience": "App Experience",
+  "mostVotedSuggestions": "Most Voted Suggestions",
+  "recentSuggestions": "Recent Suggestions",
+  "activePoll": "Active Polls",
+  "closedPolls": "Closed Polls",
+  "recentFeedback": "Recent Community Feedback",
+
+  "electricityBill": "Electricity Bill",
+  "waterBill": "Water Bill",
+  "gasBill": "Gas Bill",
+  "propertyTax": "Property Tax",
+  "mobileRecharge": "Mobile Recharge",
+  "dthRecharge": "DTH Recharge",
+  "broadbandBill": "Broadband Bill",
+  "metroCard": "Metro Card Recharge",
+
+  "bloodType": "Blood Type",
+  "hospitalName": "Hospital Name",
+  "contactNumber": "Contact Number",
+  "donateNow": "Donate Now",
+  "volunteer": "Volunteer",
+  "viewMore": "View More",
+  "upvote": "Upvote",
+  "downvote": "Downvote"
+}

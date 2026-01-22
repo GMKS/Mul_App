@@ -47,7 +47,7 @@ class EmptyFeedState extends StatelessWidget {
 
               // Title
               Text(
-                'No Videos Yet',
+                'No Videos Available',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -57,20 +57,25 @@ class EmptyFeedState extends StatelessWidget {
               const SizedBox(height: 12),
 
               // Description
-              Text(
-                _getDescription(),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                  height: 1.5,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  _getDescription(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
 
               // Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 16,
+                runSpacing: 16,
                 children: [
                   if (onChangeLocation != null)
                     _ActionButton(
@@ -78,8 +83,6 @@ class EmptyFeedState extends StatelessWidget {
                       label: 'Change City',
                       onTap: onChangeLocation!,
                     ),
-                  if (onChangeLocation != null && onChangeLanguage != null)
-                    const SizedBox(width: 16),
                   if (onChangeLanguage != null)
                     _ActionButton(
                       icon: Icons.language,

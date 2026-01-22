@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
 
+import 'l10n/app_localizations.dart';
 import 'core/app_state.dart';
 import 'core/route_manager.dart';
 import 'core/app_logger.dart';
 import 'controllers/local_alerts_controller.dart';
 import 'controllers/event_controller.dart';
 import 'controllers/devotional_controller.dart';
+import 'providers/localization_provider.dart';
 import 'services/notification_service.dart';
 import 'services/connectivity_service.dart';
 import 'screens/splash_screen.dart';
@@ -42,6 +45,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
+        ChangeNotifierProvider(create: (_) => LocalizationProvider()),
         ChangeNotifierProvider(create: (_) => LocalAlertsController()),
         ChangeNotifierProvider(create: (_) => EventController()),
         ChangeNotifierProvider(create: (_) => DevotionalController()),
@@ -89,16 +93,39 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: RouteManager.navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'My City App',
-      theme: _buildTheme(),
-      home: const SplashScreen(),
-      onGenerateRoute: _generateRoute,
-      onUnknownRoute: (settings) => MaterialPageRoute(
-        builder: (_) => _NotFoundScreen(routeName: settings.name),
-      ),
+    return Consumer<LocalizationProvider>(
+      builder: (context, localizationProvider, child) {
+        return MaterialApp(
+          navigatorKey: RouteManager.navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'My City App',
+          theme: _buildTheme(),
+          locale: localizationProvider.locale,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('en'), // English
+            Locale('te'), // Telugu
+            Locale('hi'), // Hindi
+            Locale('ta'), // Tamil
+            Locale('kn'), // Kannada
+            Locale('ml'), // Malayalam
+            Locale('bn'), // Bengali
+            Locale('mr'), // Marathi
+            Locale('gu'), // Gujarati
+            Locale('pa'), // Punjabi
+          ],
+          home: const SplashScreen(),
+          onGenerateRoute: _generateRoute,
+          onUnknownRoute: (settings) => MaterialPageRoute(
+            builder: (_) => _NotFoundScreen(routeName: settings.name),
+          ),
+        );
+      },
     );
   }
 

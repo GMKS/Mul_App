@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../l10n/app_localizations.dart';
 import '../models/video_model.dart';
 import '../models/user_model.dart';
 import '../services/feed_service.dart';
@@ -19,6 +20,7 @@ import 'region_selection_screen.dart';
 import 'cab_services_screen.dart';
 import 'local_alerts_screen.dart';
 import 'jobs_screen.dart';
+import 'education/education_corner_screen.dart';
 import 'settings_screen.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
@@ -29,6 +31,10 @@ import '../core/route_manager.dart';
 import 'devotional/devotional_feed_screen.dart';
 import '../widgets/enhanced_home_feed.dart';
 import 'business_feed_screen.dart';
+import 'marketplace_screen.dart';
+import 'community_support_screen.dart';
+import 'home_services_screen.dart';
+import 'feedback_suggestions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -88,84 +94,108 @@ class _HomeScreenState extends State<HomeScreen>
   final Map<String, int> _videoComments = {};
   final Map<String, int> _videoShares = {};
 
-  final List<CategoryItem> _categories = [
-    CategoryItem(
-      title: 'Regional',
-      icon: Icons.location_on,
-      color: const Color(0xFFFF6B6B),
-      gradient: [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)],
-    ),
-    CategoryItem(
-      title: 'Business',
-      icon: Icons.business_center,
-      color: const Color(0xFF6C63FF),
-      gradient: [const Color(0xFF6C63FF), const Color(0xFF5A52E0)],
-    ),
-    CategoryItem(
-      title: 'Devotional',
-      icon: Icons.self_improvement,
-      color: const Color(0xFF9B59B6),
-      gradient: [const Color(0xFF9B59B6), const Color(0xFF8E44AD)],
-    ),
-  ];
+  List<CategoryItem> _getCategories(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      CategoryItem(
+        title: l10n.regional,
+        icon: Icons.location_on,
+        color: const Color(0xFFFF6B6B),
+        gradient: [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)],
+      ),
+      CategoryItem(
+        title: l10n.business,
+        icon: Icons.business_center,
+        color: const Color(0xFF6C63FF),
+        gradient: [const Color(0xFF6C63FF), const Color(0xFF5A52E0)],
+      ),
+      CategoryItem(
+        title: l10n.devotional,
+        icon: Icons.self_improvement,
+        color: const Color(0xFF9B59B6),
+        gradient: [const Color(0xFF9B59B6), const Color(0xFF8E44AD)],
+      ),
+    ];
+  }
 
   // --- Regional Services Cards ---
-  final List<Map<String, dynamic>> _regionalServices = [
-    {
-      'title': 'Cab Services',
-      'icon': Icons.local_taxi,
-      'color': const Color(0xFFFF6B6B),
-      'gradient': [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)]
-    },
-    {
-      'title': 'Local Alerts',
-      'icon': Icons.notifications_active,
-      'color': const Color(0xFFFF6347),
-      'gradient': [const Color(0xFFFF6347), const Color(0xFFFF4500)]
-    },
-    {
-      'title': 'Events & Festivals',
-      'icon': Icons.celebration,
-      'color': const Color(0xFF9B59B6),
-      'gradient': [const Color(0xFF9B59B6), const Color(0xFF8E44AD)]
-    },
-    {
-      'title': 'Emergency Services',
-      'icon': Icons.local_hospital,
-      'color': const Color(0xFFE91E63),
-      'gradient': [const Color(0xFFE91E63), const Color(0xFFC2185B)]
-    },
-    {
-      'title': 'Jobs & Opportunities',
-      'icon': Icons.work,
-      'color': const Color(0xFF3498DB),
-      'gradient': [const Color(0xFF3498DB), const Color(0xFF2980B9)]
-    },
-    {
-      'title': 'Education Corner',
-      'icon': Icons.school,
-      'color': const Color(0xFF1ABC9C),
-      'gradient': [const Color(0xFF1ABC9C), const Color(0xFF16A085)]
-    },
-    {
-      'title': 'Market Prices',
-      'icon': Icons.trending_up,
-      'color': const Color(0xFFF39C12),
-      'gradient': [const Color(0xFFF39C12), const Color(0xFFE67E22)]
-    },
-    {
-      'title': 'Community Help',
-      'icon': Icons.people,
-      'color': const Color(0xFF16A085),
-      'gradient': [const Color(0xFF16A085), const Color(0xFF1ABC9C)]
-    },
-    {
-      'title': 'Services Directory',
-      'icon': Icons.home_repair_service,
-      'color': const Color(0xFF2196F3),
-      'gradient': [const Color(0xFF2196F3), const Color(0xFF1976D2)]
-    },
-  ];
+  List<Map<String, dynamic>> _getRegionalServices(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      {
+        'title': l10n.cabServices,
+        'icon': Icons.local_taxi,
+        'color': const Color(0xFFFF6B6B),
+        'gradient': [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)]
+      },
+      {
+        'title': l10n.localAlerts,
+        'icon': Icons.notifications_active,
+        'color': const Color(0xFFFF6347),
+        'gradient': [const Color(0xFFFF6347), const Color(0xFFFF4500)]
+      },
+      {
+        'title': l10n.eventsAndFestivals,
+        'icon': Icons.celebration,
+        'color': const Color(0xFF9B59B6),
+        'gradient': [const Color(0xFF9B59B6), const Color(0xFF8E44AD)]
+      },
+      {
+        'title': l10n.emergencyServices,
+        'icon': Icons.local_hospital,
+        'color': const Color(0xFFE91E63),
+        'gradient': [const Color(0xFFE91E63), const Color(0xFFC2185B)]
+      },
+      {
+        'title': l10n.jobsAndOpportunities,
+        'icon': Icons.work,
+        'color': const Color(0xFF3498DB),
+        'gradient': [const Color(0xFF3498DB), const Color(0xFF2980B9)]
+      },
+      {
+        'title': l10n.educationCorner,
+        'icon': Icons.school,
+        'color': const Color(0xFF1ABC9C),
+        'gradient': [const Color(0xFF1ABC9C), const Color(0xFF16A085)]
+      },
+      {
+        'title': l10n.marketPrices,
+        'icon': Icons.trending_up,
+        'color': const Color(0xFFF39C12),
+        'gradient': [const Color(0xFFF39C12), const Color(0xFFE67E22)]
+      },
+      {
+        'title': l10n.marketplaceAndClassifieds,
+        'icon': Icons.storefront,
+        'color': const Color(0xFFFF9800),
+        'gradient': [const Color(0xFFFF9800), const Color(0xFFFF6F00)]
+      },
+      {
+        'title': l10n.communityHelp,
+        'icon': Icons.people,
+        'color': const Color(0xFF16A085),
+        'gradient': [const Color(0xFF16A085), const Color(0xFF1ABC9C)]
+      },
+      {
+        'title': l10n.homeServices,
+        'icon': Icons.home_repair_service,
+        'color': const Color(0xFF9C27B0),
+        'gradient': [const Color(0xFF9C27B0), const Color(0xFF7B1FA2)]
+      },
+      {
+        'title': l10n.feedbackAndSuggestions,
+        'icon': Icons.feedback,
+        'color': const Color(0xFF00BCD4),
+        'gradient': [const Color(0xFF00BCD4), const Color(0xFF0097A7)]
+      },
+      {
+        'title': l10n.servicesDirectory,
+        'icon': Icons.home_repair_service,
+        'color': const Color(0xFF2196F3),
+        'gradient': [const Color(0xFF2196F3), const Color(0xFF1976D2)]
+      },
+    ];
+  }
 
   @override
   void initState() {
@@ -331,26 +361,33 @@ class _HomeScreenState extends State<HomeScreen>
     var filteredVideos = _videos;
 
     // Filter by category FIRST - this is the primary filter
-    final category = _categories[_selectedCategoryIndex].title;
-    filteredVideos = FeedService.filterByCategory(filteredVideos, category);
+    if (_selectedCategoryIndex >= 0 && context != null) {
+      final categories = _getCategories(context!);
+      if (_selectedCategoryIndex < categories.length) {
+        final category = categories[_selectedCategoryIndex].title;
+        filteredVideos = FeedService.filterByCategory(filteredVideos, category);
 
-    // For Regional category, filter by user's selected region/state/city
-    if (category == 'Regional' && _currentUser != null) {
-      filteredVideos = filteredVideos.where((video) {
-        // Match by city first, then state, then region
-        if (_currentUser!.city.isNotEmpty && video.city == _currentUser!.city) {
-          return true;
+        // For Regional category, filter by user's selected region/state/city
+        final l10n = AppLocalizations.of(context!)!;
+        if (category == l10n.regional && _currentUser != null) {
+          filteredVideos = filteredVideos.where((video) {
+            // Match by city first, then state, then region
+            if (_currentUser!.city.isNotEmpty &&
+                video.city == _currentUser!.city) {
+              return true;
+            }
+            if (_currentUser!.state.isNotEmpty &&
+                video.state == _currentUser!.state) {
+              return true;
+            }
+            if (_currentUser!.region.isNotEmpty &&
+                video.region == _currentUser!.region) {
+              return true;
+            }
+            return false;
+          }).toList();
         }
-        if (_currentUser!.state.isNotEmpty &&
-            video.state == _currentUser!.state) {
-          return true;
-        }
-        if (_currentUser!.region.isNotEmpty &&
-            video.region == _currentUser!.region) {
-          return true;
-        }
-        return false;
-      }).toList();
+      }
     }
 
     // Filter by hashtag if selected
@@ -681,49 +718,113 @@ class _HomeScreenState extends State<HomeScreen>
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
         ),
-        itemCount: 9, // Show 9 items as in the screenshot
+        itemCount:
+            _getRegionalServices(context).length, // Show all regional services
         itemBuilder: (context, index) {
-          if (index < _regionalServices.length) {
-            final service = _regionalServices[index];
+          final regionalServices = _getRegionalServices(context);
+          if (index < regionalServices.length) {
+            final service = regionalServices[index];
             return _buildRegionalServiceCard(
               title: service['title'] as String,
               subtitle: 'Services',
               icon: service['icon'] as IconData,
               gradient: service['gradient'] as List<Color>,
-              onTap: () {
-                if (service['title'] == 'Cab Services') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CabServicesScreen(
-                        userCity: _currentUser?.city,
-                      ),
-                    ),
-                  );
-                } else if (service['title'] == 'Local Alerts') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LocalAlertsScreen(),
-                    ),
-                  );
-                } else if (service['title'] == 'Jobs & Opportunities') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const JobsScreen(),
-                    ),
-                  );
-                } else {
-                  _showComingSoonDialog(service['title'] as String);
-                }
-              },
+              onTap: () => _navigateToService(index),
             );
           }
           return Container();
         },
       ),
     );
+  }
+
+  void _navigateToService(int index) {
+    switch (index) {
+      case 0: // Cab Services
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CabServicesScreen(
+              userCity: _currentUser?.city,
+            ),
+          ),
+        );
+        break;
+      case 1: // Local Alerts
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LocalAlertsScreen(),
+          ),
+        );
+        break;
+      case 2: // Events & Festivals
+        _showComingSoonDialog(
+            _getRegionalServices(context)[2]['title'] as String);
+        break;
+      case 3: // Emergency Services
+        _showComingSoonDialog(
+            _getRegionalServices(context)[3]['title'] as String);
+        break;
+      case 4: // Jobs & Opportunities
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const JobsScreen(),
+          ),
+        );
+        break;
+      case 5: // Education Corner
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const EducationCornerScreen(),
+          ),
+        );
+        break;
+      case 6: // Market Prices
+        _showComingSoonDialog(
+            _getRegionalServices(context)[6]['title'] as String);
+        break;
+      case 7: // Marketplace & Classifieds
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MarketplaceScreen(),
+          ),
+        );
+        break;
+      case 8: // Community Help
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CommunitySupportScreen(),
+          ),
+        );
+        break;
+      case 9: // Home Services
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HomeServicesScreen(),
+          ),
+        );
+        break;
+      case 10: // Feedback & Suggestions
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const FeedbackSuggestionsScreen(),
+          ),
+        );
+        break;
+      case 11: // Services Directory
+        _showComingSoonDialog(
+            _getRegionalServices(context)[11]['title'] as String);
+        break;
+      default:
+        _showComingSoonDialog('Service');
+    }
   }
 
   Widget _buildRegionalServiceCard({
@@ -878,44 +979,17 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
-                  itemCount: 9,
+                  itemCount: _getRegionalServices(context).length,
                   itemBuilder: (context, index) {
-                    if (index < _regionalServices.length) {
-                      final service = _regionalServices[index];
+                    final regionalServices = _getRegionalServices(context);
+                    if (index < regionalServices.length) {
+                      final service = regionalServices[index];
                       return _buildRegionalServiceCard(
                         title: service['title'] as String,
                         subtitle: 'Services',
                         icon: service['icon'] as IconData,
                         gradient: service['gradient'] as List<Color>,
-                        onTap: () {
-                          if (service['title'] == 'Cab Services') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CabServicesScreen(
-                                  userCity: _currentUser?.city,
-                                ),
-                              ),
-                            );
-                          } else if (service['title'] == 'Local Alerts') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LocalAlertsScreen(),
-                              ),
-                            );
-                          } else if (service['title'] ==
-                              'Jobs & Opportunities') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const JobsScreen(),
-                              ),
-                            );
-                          } else {
-                            _showComingSoonDialog(service['title'] as String);
-                          }
-                        },
+                        onTap: () => _navigateToService(index),
                       );
                     }
                     return Container();
@@ -959,7 +1033,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _categories[_selectedCategoryIndex].title,
+                  _getCategories(context)[_selectedCategoryIndex].title,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -983,14 +1057,14 @@ class _HomeScreenState extends State<HomeScreen>
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      _categories[_selectedCategoryIndex].icon,
+                      _getCategories(context)[_selectedCategoryIndex].icon,
                       size: 50,
                       color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    _categories[_selectedCategoryIndex].title,
+                    _getCategories(context)[_selectedCategoryIndex].title,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -1066,9 +1140,10 @@ class _HomeScreenState extends State<HomeScreen>
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
-                itemCount: _categories.length,
+                itemCount: _getCategories(context).length,
                 itemBuilder: (context, index) {
-                  final category = _categories[index];
+                  final categories = _getCategories(context);
+                  final category = categories[index];
                   return _buildMainCategoryCard(
                     title: category.title,
                     icon: category.icon,

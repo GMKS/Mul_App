@@ -245,7 +245,7 @@ class EventNotificationService {
       priority: Priority.max,
       styleInformation: BigTextStyleInformation(''),
       icon: '@mipmap/ic_launcher',
-      color: Color(0xFFE91E63),
+      color: const Color(0xFFE91E63),
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(

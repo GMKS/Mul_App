@@ -9,15 +9,22 @@ import '../../models/devotional_video_model.dart';
 import '../../models/festival_model.dart';
 import '../../models/quote_model.dart';
 import '../../models/temple_model.dart';
+import '../../models/report_model.dart';
 import '../../services/devotional_service.dart';
 import '../../services/religion_service.dart';
 import '../../services/festival_service.dart';
 import '../../services/temple_service.dart';
 import '../../services/devotional_notification_service.dart';
+import '../../services/ai_moderation_service.dart';
+import '../../services/user_safety_service.dart';
+import '../../models/user_safety_model.dart';
 import '../../widgets/quote_of_the_day_widget.dart';
 import '../../widgets/festival_banner_widget.dart';
+import '../../widgets/report_button_widget.dart';
 import 'religion_selection_screen.dart';
 import 'upload_devotional_video_screen.dart';
+import '../moderation/safety_center_screen.dart';
+import '../moderation/analytics_dashboard_screen.dart';
 
 class DevotionalFeedScreen extends StatefulWidget {
   const DevotionalFeedScreen({super.key});
@@ -377,6 +384,13 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
                 ],
               ),
             ),
+          ),
+
+          // Safety & Moderation button - NEW FEATURE
+          IconButton(
+            onPressed: _showSafetyMenu,
+            icon: const Icon(Icons.shield_outlined, color: Colors.white),
+            tooltip: 'Safety & Moderation',
           ),
 
           // Filter button
@@ -1540,6 +1554,232 @@ class _DevotionalFeedScreenState extends State<DevotionalFeedScreen>
     );
   }
 
+  // NEW FEATURE: Safety & Moderation Menu
+  void _showSafetyMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF16213e),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return FutureBuilder<UserTrustLevel>(
+          future: UserSafetyService.getUserTrustLevel('current_user_id'),
+          builder: (context, snapshot) {
+            final trustLevel = snapshot.data?.trustBadge ?? TrustBadge.newUser;
+
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      const Icon(Icons.shield, color: Color(0xFF9B59B6)),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Safety & Moderation',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Trust Badge
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1a1a2e),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF9B59B6)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          snapshot.data?.badgeEmoji ?? '',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          snapshot.data?.badgeText ?? 'New User',
+                          style: const TextStyle(
+                            color: Color(0xFF9B59B6),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Safety Center
+                  _buildSafetyMenuItem(
+                    icon: Icons.security,
+                    title: 'Safety Center',
+                    subtitle: 'Your safety hub with reports & guidelines',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SafetyCenterScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Community Guidelines
+                  _buildSafetyMenuItem(
+                    icon: Icons.gavel,
+                    title: 'Community Guidelines',
+                    subtitle: 'Learn about our content policies',
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Already accessible via Safety Center
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SafetyCenterScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Analytics (Admin/Moderator only)
+                  if (trustLevel == TrustBadge.communityMod)
+                    _buildSafetyMenuItem(
+                      icon: Icons.analytics_outlined,
+                      title: 'Moderation Analytics',
+                      subtitle: 'View community health metrics',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const ModerationAnalyticsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+                  const SizedBox(height: 8),
+
+                  // AI Protection Indicator
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1a1a2e),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.green.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.verified_user,
+                          color: Colors.green.withOpacity(0.7),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'AI Moderation Active - Content is automatically screened for safety',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSafetyMenuItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1a1a2e),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFF9B59B6).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: const Color(0xFF9B59B6)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white.withOpacity(0.3),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _scheduleNotificationForFestival(Festival festival) async {
     await DevotionalNotificationService.showFestivalNotification(festival);
     if (mounted) {
@@ -1717,6 +1957,84 @@ class _DevotionalVideoCardState extends State<DevotionalVideoCard> {
           ),
         ),
 
+        // AI Moderation Warning Overlay - NEW FEATURE
+        FutureBuilder<ModerationResult>(
+          future: AIModerationService().analyzeDevotionalVideo(
+            title: widget.video.title,
+            description: widget.video.deity ?? 'Devotional Content',
+            deity: widget.video.deity ?? 'General',
+            religion: widget.video.religion ?? 'Hindu',
+          ),
+          builder: (context, snapshot) {
+            if (snapshot.hasData &&
+                snapshot.data!.safety != ContentSafety.safe) {
+              final result = snapshot.data!;
+              return Positioned(
+                top: 60,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: result.safety == ContentSafety.needsReview
+                        ? Colors.orange.withOpacity(0.9)
+                        : Colors.red.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        result.safety == ContentSafety.needsReview
+                            ? Icons.warning_amber
+                            : Icons.error,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              result.safety == ContentSafety.needsReview
+                                  ? '⚠️ Content Under Review'
+                                  : '🚫 ${result.reason ?? "Flagged Content"}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            if (result.reason != null &&
+                                result.reason!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  result.reason!,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+
         // Content
         Positioned(
           bottom: 100,
@@ -1832,6 +2150,22 @@ class _DevotionalVideoCardState extends State<DevotionalVideoCard> {
                 icon: Icons.share,
                 label: 'Share',
                 onTap: () {},
+              ),
+              const SizedBox(height: 20),
+
+              // Report Button - NEW MODERATION FEATURE
+              ReportButton(
+                contentId: widget.video.id,
+                contentType: ReportedContentType.devotionalVideo,
+                contentTitle: widget.video.title,
+                contentOwnerId: widget.video.creatorId ?? 'unknown',
+                contentOwnerName: widget.video.creatorName ??
+                    widget.video.templeName ??
+                    'Unknown',
+                contentDescription: widget.video.deity,
+                contentThumbnail: widget.video.thumbnailUrl,
+                iconColor: Colors.white,
+                showLabel: false,
               ),
             ],
           ),

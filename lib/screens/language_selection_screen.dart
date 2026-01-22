@@ -4,8 +4,10 @@
 // Save selection locally and in backend user profile.
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../services/language_service.dart';
+import '../providers/localization_provider.dart';
 import 'region_selection_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_cards.dart';
@@ -60,6 +62,12 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         primaryLanguage: _primaryLanguage!,
         secondaryLanguage: _secondaryLanguage,
       );
+
+      // Update app locale immediately
+      if (mounted) {
+        await Provider.of<LocalizationProvider>(context, listen: false)
+            .setLocale(Locale(_primaryLanguage!));
+      }
 
       if (widget.isInitialSetup) {
         // Navigate to region selection

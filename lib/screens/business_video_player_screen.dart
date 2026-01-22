@@ -3,10 +3,13 @@
 
 import 'package:flutter/material.dart';
 import '../models/business_model.dart';
+import '../models/business_video_model.dart' as video_model;
+import '../models/report_model.dart';
+import '../widgets/report_button_widget.dart';
 import 'business_profile_screen.dart';
 
 class BusinessVideoPlayerScreen extends StatefulWidget {
-  final BusinessVideo video;
+  final video_model.BusinessVideo video;
   final BusinessModel business;
 
   const BusinessVideoPlayerScreen({
@@ -57,7 +60,7 @@ class _BusinessVideoPlayerScreenState extends State<BusinessVideoPlayerScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Video: ${widget.video.title}',
+                        'Video: ${widget.video.productName}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -105,7 +108,7 @@ class _BusinessVideoPlayerScreenState extends State<BusinessVideoPlayerScreen> {
                 // Like
                 _buildActionButton(
                   icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-                  label: '${widget.video.likes}',
+                  label: '${widget.video.views}',
                   color: _isLiked ? Colors.red : Colors.white,
                   onTap: () {
                     setState(() => _isLiked = !_isLiked);
@@ -124,8 +127,22 @@ class _BusinessVideoPlayerScreenState extends State<BusinessVideoPlayerScreen> {
                 // Share
                 _buildActionButton(
                   icon: Icons.share,
-                  label: '${widget.video.shares}',
+                  label: '${widget.video.callClicks}',
                   onTap: () {},
+                ),
+                const SizedBox(height: 24),
+
+                // Report Button - NEW MODERATION FEATURE
+                ReportButton(
+                  contentId: widget.video.id,
+                  contentType: ReportedContentType.businessVideo,
+                  contentTitle: widget.video.productName,
+                  contentOwnerId: widget.business.ownerId,
+                  contentOwnerName: widget.business.name,
+                  contentDescription: widget.video.description,
+                  contentThumbnail: widget.video.thumbnailUrl,
+                  iconColor: Colors.white,
+                  showLabel: false,
                 ),
                 const SizedBox(height: 24),
 
@@ -201,7 +218,7 @@ class _BusinessVideoPlayerScreenState extends State<BusinessVideoPlayerScreen> {
 
                 // Video Title
                 Text(
-                  widget.video.title,
+                  widget.video.productName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -209,14 +226,24 @@ class _BusinessVideoPlayerScreenState extends State<BusinessVideoPlayerScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 4),
+
+                // Price
+                Text(
+                  widget.video.formattedPrice,
+                  style: const TextStyle(
+                    color: Colors.greenAccent,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 8),
 
-                // Product Tags (Shoppable)
-                if (widget.video.productTags != null &&
-                    widget.video.productTags!.isNotEmpty)
+                // Hashtags
+                if (widget.video.hashtags.isNotEmpty)
                   Wrap(
                     spacing: 8,
-                    children: widget.video.productTags!.map((tag) {
+                    children: widget.video.hashtags.map((tag) {
                       return InkWell(
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(

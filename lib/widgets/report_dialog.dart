@@ -1,8 +1,10 @@
 // STEP 11: Report Content Dialog
 // Content reporting UI
+// NOTE: This is the OLD report dialog. Use report_button_widget.dart instead for new implementations.
 
 import 'package:flutter/material.dart';
-import '../models/moderation_model.dart';
+// import '../models/moderation_model.dart'; // Commented out - causes conflict with new report_model.dart
+import '../models/report_model.dart'; // Using new model
 import '../services/moderation_service.dart';
 
 class ReportContentDialog extends StatefulWidget {
@@ -22,7 +24,8 @@ class ReportContentDialog extends StatefulWidget {
 }
 
 class _ReportContentDialogState extends State<ReportContentDialog> {
-  ReportReason? _selectedReason;
+  ReportCategory?
+      _selectedReason; // Changed from ReportReason to ReportCategory
   final _descriptionController = TextEditingController();
   bool _isSubmitting = false;
 

@@ -7,8 +7,11 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import '../models/business_model.dart';
+import '../models/business_video_model.dart' as video_model;
 import 'business_profile_screen.dart';
 import 'business_video_player_screen.dart';
+import 'business/business_analytics_advanced_screen.dart';
+import 'business/business_profile_enhanced_screen.dart';
 
 class BusinessFeedScreen extends StatefulWidget {
   const BusinessFeedScreen({super.key});
@@ -21,7 +24,7 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<BusinessModel> _businesses = [];
-  List<BusinessVideo> _videos = [];
+  List<video_model.BusinessVideo> _videos = [];
   List<BusinessOffer> _offers = [];
 
   // Filter states
@@ -131,19 +134,31 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
     // Generate videos
     _videos = List.generate(15, (index) {
       final businessIndex = random.nextInt(_businesses.length);
-      return BusinessVideo(
+      final business = _businesses[businessIndex];
+      return video_model.BusinessVideo(
         id: 'video_$index',
-        businessId: _businesses[businessIndex].id,
+        ownerId: business.ownerId,
         videoUrl: 'https://example.com/video_$index.mp4',
         thumbnailUrl: 'https://picsum.photos/seed/$index/400/600',
-        title: 'Check out our ${_getProductName(index)}!',
-        description: 'Amazing deals available now',
-        duration: 15 + random.nextInt(45), // 15-60 seconds
+        productName: _getProductName(index),
+        price: (random.nextDouble() * 5000) + 100,
+        offerTag: index % 3 == 0 ? _getDiscountText(index) : null,
+        businessName: business.name,
+        businessCategory: business.category,
+        city: business.city,
+        area: business.locality ?? business.address,
+        phoneNumber: business.phoneNumber,
+        whatsappNumber: business.whatsappNumber ?? business.phoneNumber,
         views: random.nextInt(10000),
-        likes: random.nextInt(1000),
-        shares: random.nextInt(100),
-        productTags: ['product_${random.nextInt(5)}'],
+        callClicks: random.nextInt(100),
+        whatsappClicks: random.nextInt(150),
+        isBoosted: index < 3,
+        boostExpiry:
+            index < 3 ? now.add(Duration(days: random.nextInt(7) + 1)) : null,
         createdAt: now.subtract(Duration(hours: random.nextInt(48))),
+        hashtags: ['#${business.category}', '#${business.city}', '#deals'],
+        description:
+            'Check out our ${_getProductName(index)}! ${_getTagline(index)}',
         isActive: true,
       );
     });
@@ -193,6 +208,25 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Business Feed'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics),
+            tooltip: 'Business Analytics',
+            onPressed: () {
+              // Navigate to advanced analytics
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BusinessAnalyticsAdvancedScreen(
+                    userId: 'demo_user',
+                    businessId: 'demo_business',
+                    videos: _videos,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -321,7 +355,7 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
       itemBuilder: (context, index) {
         final video = _videos[index];
         final business = _businesses.firstWhere(
-          (b) => b.id == video.businessId,
+          (b) => b.ownerId == video.ownerId,
           orElse: () => _businesses.first,
         );
 
@@ -330,7 +364,8 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
     );
   }
 
-  Widget _buildVideoCard(BusinessVideo video, BusinessModel business) {
+  Widget _buildVideoCard(
+      video_model.BusinessVideo video, BusinessModel business) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       elevation: 2,
@@ -362,7 +397,7 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
                       top: Radius.circular(16),
                     ),
                     image: DecorationImage(
-                      image: NetworkImage(video.thumbnailUrl ?? ''),
+                      image: NetworkImage(video.thumbnailUrl),
                       fit: BoxFit.cover,
                       onError: (_, __) {},
                     ),
@@ -376,29 +411,32 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
                     ),
                   ),
                 ),
-                // Duration badge
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${video.duration}s',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                // Boosted badge
+                if (video.isBoosted && video.isBoostActive)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Colors.purple, Colors.pink],
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'BOOSTED',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
 
@@ -493,14 +531,50 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
                   ),
                   const SizedBox(height: 8),
 
-                  // Video Title
-                  Text(
-                    video.title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  // Video Title & Product
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          video.productName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        video.formattedPrice,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
                   ),
+                  if (video.offerTag != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          video.offerTag!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 8),
 
                   // Stats
@@ -508,9 +582,9 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
                     children: [
                       _buildVideoStat(Icons.visibility, '${video.views}'),
                       const SizedBox(width: 16),
-                      _buildVideoStat(Icons.favorite_border, '${video.likes}'),
+                      _buildVideoStat(Icons.phone, '${video.callClicks}'),
                       const SizedBox(width: 16),
-                      _buildVideoStat(Icons.share, '${video.shares}'),
+                      _buildVideoStat(Icons.chat, '${video.whatsappClicks}'),
                     ],
                   ),
                 ],
@@ -755,14 +829,20 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.local_offer, size: 18),
                           const SizedBox(width: 8),
-                          Text(
-                            'Claim Offer • ${offer.claimedCount}/${offer.claimLimit ?? "∞"} claimed',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                          Flexible(
+                            child: Text(
+                              'Claim Offer • ${offer.claimedCount}/${offer.claimLimit ?? "∞"} claimed',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ],
@@ -826,7 +906,8 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => BusinessProfileScreen(business: business),
+              builder: (context) =>
+                  BusinessProfileEnhancedScreen(business: business),
             ),
           );
         },

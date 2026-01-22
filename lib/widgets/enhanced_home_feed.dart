@@ -6,12 +6,12 @@ import 'user_stories_bar.dart';
 import 'quote_of_the_day_widget.dart';
 import 'aqi_widget.dart';
 import 'local_deals_widget.dart';
-import 'community_polls_widget.dart';
 import 'business_teasers_carousel.dart';
 import 'gamified_streaks_widget.dart';
 import 'quick_actions_widget.dart';
 import 'skeleton_loaders.dart';
 import '../screens/business_feed_screen.dart';
+import '../screens/devotional/devotional_feed_screen.dart';
 import '../core/route_manager.dart';
 
 class EnhancedHomeFeed extends StatefulWidget {
@@ -168,9 +168,6 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
               },
             ),
 
-            // 10. Community Polls
-            const CommunityPollsWidget(),
-
             // 11. Gamified Streaks (Full Widget)
             const Padding(
               padding: EdgeInsets.only(top: 8),
@@ -265,8 +262,16 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
               builder: (context) => const BusinessFeedScreen(),
             ),
           );
+        } else if (index == 2) {
+          // Devotional category - Navigate to Devotional Feed
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const DevotionalFeedScreen(),
+            ),
+          );
         } else {
-          // Devotional or other categories - show coming soon
+          // Other categories - show coming soon
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('$title content coming soon!')),
           );

@@ -7,11 +7,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_state.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../screens/cab_services_screen.dart';
 import '../../../screens/local_alerts_screen.dart';
 import '../../../screens/events/event_list_screen.dart';
 import '../../../screens/jobs_screen.dart';
+import '../../../screens/education/education_corner_screen.dart';
 import '../../../screens/services_directory_screen.dart';
+import '../../../screens/emergency/emergency_services_screen.dart';
+import '../../../screens/market_prices_screen.dart';
+import '../../../screens/feedback_screen.dart';
+import '../../../screens/home_services_screen.dart';
 import '../../../services/auth_service.dart';
 import '../../../screens/login_screen.dart';
 import '../models/models.dart';
@@ -33,63 +39,84 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
   late TabController _mainTabController;
   bool _showFilters = true;
 
-  // Regional Services data
-  final List<Map<String, dynamic>> _regionalServices = [
-    {
-      'title': 'Cab Services',
-      'icon': Icons.local_taxi,
-      'color': const Color(0xFFFF6B6B),
-      'gradient': [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)]
-    },
-    {
-      'title': 'Local Alerts',
-      'icon': Icons.notifications_active,
-      'color': const Color(0xFFFF6347),
-      'gradient': [const Color(0xFFFF6347), const Color(0xFFFF4500)]
-    },
-    {
-      'title': 'Events & Festivals',
-      'icon': Icons.celebration,
-      'color': const Color(0xFF9B59B6),
-      'gradient': [const Color(0xFF9B59B6), const Color(0xFF8E44AD)]
-    },
-    {
-      'title': 'Emergency Services',
-      'icon': Icons.local_hospital,
-      'color': const Color(0xFFE91E63),
-      'gradient': [const Color(0xFFE91E63), const Color(0xFFC2185B)]
-    },
-    {
-      'title': 'Jobs & Opportunities',
-      'icon': Icons.work,
-      'color': const Color(0xFF3498DB),
-      'gradient': [const Color(0xFF3498DB), const Color(0xFF2980B9)]
-    },
-    {
-      'title': 'Education Corner',
-      'icon': Icons.school,
-      'color': const Color(0xFF1ABC9C),
-      'gradient': [const Color(0xFF1ABC9C), const Color(0xFF16A085)]
-    },
-    {
-      'title': 'Market Prices',
-      'icon': Icons.trending_up,
-      'color': const Color(0xFFF39C12),
-      'gradient': [const Color(0xFFF39C12), const Color(0xFFE67E22)]
-    },
-    {
-      'title': 'Community Help',
-      'icon': Icons.people,
-      'color': const Color(0xFF16A085),
-      'gradient': [const Color(0xFF16A085), const Color(0xFF1ABC9C)]
-    },
-    {
-      'title': 'Services Directory',
-      'icon': Icons.home_repair_service,
-      'color': const Color(0xFF2196F3),
-      'gradient': [const Color(0xFF2196F3), const Color(0xFF1976D2)]
-    },
-  ];
+  // Regional Services data - now uses localization
+  List<Map<String, dynamic>> _getRegionalServices(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      {
+        'title': l10n.cabServices,
+        'icon': Icons.local_taxi,
+        'color': const Color(0xFFFF6B6B),
+        'gradient': [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)]
+      },
+      {
+        'title': l10n.localAlerts,
+        'icon': Icons.notifications_active,
+        'color': const Color(0xFFFF6347),
+        'gradient': [const Color(0xFFFF6347), const Color(0xFFFF4500)]
+      },
+      {
+        'title': l10n.eventsAndFestivals,
+        'icon': Icons.celebration,
+        'color': const Color(0xFF9B59B6),
+        'gradient': [const Color(0xFF9B59B6), const Color(0xFF8E44AD)]
+      },
+      {
+        'title': l10n.emergencyServices,
+        'icon': Icons.local_hospital,
+        'color': const Color(0xFFE91E63),
+        'gradient': [const Color(0xFFE91E63), const Color(0xFFC2185B)]
+      },
+      {
+        'title': l10n.jobsAndOpportunities,
+        'icon': Icons.work,
+        'color': const Color(0xFF3498DB),
+        'gradient': [const Color(0xFF3498DB), const Color(0xFF2980B9)]
+      },
+      {
+        'title': l10n.educationCorner,
+        'icon': Icons.school,
+        'color': const Color(0xFF1ABC9C),
+        'gradient': [const Color(0xFF1ABC9C), const Color(0xFF16A085)]
+      },
+      {
+        'title': l10n.marketPrices,
+        'icon': Icons.trending_up,
+        'color': const Color(0xFFF39C12),
+        'gradient': [const Color(0xFFF39C12), const Color(0xFFE67E22)]
+      },
+      {
+        'title': l10n.marketplaceAndClassifieds,
+        'icon': Icons.storefront,
+        'color': const Color(0xFFFF9800),
+        'gradient': [const Color(0xFFFF9800), const Color(0xFFFF6F00)]
+      },
+      {
+        'title': l10n.communityHelp,
+        'icon': Icons.people,
+        'color': const Color(0xFF16A085),
+        'gradient': [const Color(0xFF16A085), const Color(0xFF1ABC9C)]
+      },
+      {
+        'title': l10n.homeServices,
+        'icon': Icons.home_repair_service,
+        'color': const Color(0xFF9C27B0),
+        'gradient': [const Color(0xFF9C27B0), const Color(0xFF7B1FA2)]
+      },
+      {
+        'title': l10n.feedbackAndSuggestions,
+        'icon': Icons.feedback,
+        'color': const Color(0xFF00BCD4),
+        'gradient': [const Color(0xFF00BCD4), const Color(0xFF0097A7)]
+      },
+      {
+        'title': l10n.servicesDirectory,
+        'icon': Icons.home_repair_service,
+        'color': const Color(0xFF2196F3),
+        'gradient': [const Color(0xFF2196F3), const Color(0xFF1976D2)]
+      },
+    ];
+  }
 
   @override
   void initState() {
@@ -104,75 +131,20 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
 
     // Initialize feed with user's location
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeFeed();
+      final appState = context.read<AppState>();
+      _feedState.setCity(
+        city: appState.selectedCity ?? 'Hyderabad',
+        state: appState.selectedState ?? 'Telangana',
+      );
     });
-  }
-
-  void _initializeFeed() {
-    final appState = context.read<AppState>();
-    _feedState.initialize(
-      city: appState.selectedCity ?? 'Hyderabad',
-      state: appState.selectedState ?? 'Telangana',
-      district: null,
-      region: appState.selectedRegion,
-    );
   }
 
   @override
   void dispose() {
-    _feedState.dispose();
     _filterAnimationController.dispose();
     _mainTabController.dispose();
+    _feedState.dispose();
     super.dispose();
-  }
-
-  Future<void> _logout() async {
-    await AuthService.signOut();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-        (route) => false,
-      );
-    }
-  }
-
-  void _toggleFilters() {
-    setState(() {
-      _showFilters = !_showFilters;
-      if (_showFilters) {
-        _filterAnimationController.forward();
-      } else {
-        _filterAnimationController.reverse();
-      }
-    });
-  }
-
-  Future<void> _showLanguageSelector() async {
-    final language = await LanguageSelectionSheet.show(
-      context,
-      selectedLanguage: _feedState.filter.language,
-    );
-
-    if (language != null) {
-      _feedState.setLanguage(language);
-    }
-  }
-
-  Future<void> _showCitySelector() async {
-    final result = await CitySelectionSheet.show(
-      context,
-      selectedCity: _feedState.filter.city,
-      selectedState: _feedState.filter.state,
-    );
-
-    if (result != null) {
-      _feedState.setCity(
-        city: result['city']!,
-        state: result['state']!,
-        district: result['district'],
-      );
-    }
   }
 
   void _handleLike(RegionalVideo video) {
@@ -220,24 +192,90 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
   }
 
   void _showComingSoonDialog(String title) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
-        content: const Text('This feature is coming soon!'),
+        content: Text(l10n.comingSoon),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(l10n.ok),
           ),
         ],
       ),
     );
   }
 
+  Future<void> _showCitySelector() async {
+    // TODO: Implement city selector
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.comingSoon),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _showLanguageSelector() async {
+    // TODO: Implement language selector
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.comingSoon),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _toggleFilters() {
+    setState(() {
+      _showFilters = !_showFilters;
+      if (_showFilters) {
+        _filterAnimationController.forward();
+      } else {
+        _filterAnimationController.reverse();
+      }
+    });
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await AuthService.signOut();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   void _handleServiceTap(Map<String, dynamic> service) {
     final title = service['title'] as String;
-    if (title == 'Cab Services') {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (title == l10n.cabServices) {
       final appState = context.read<AppState>();
       Navigator.push(
         context,
@@ -247,28 +285,52 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
           ),
         ),
       );
-    } else if (title == 'Local Alerts') {
+    } else if (title == l10n.localAlerts) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const LocalAlertsScreen(),
         ),
       );
-    } else if (title == 'Events & Festivals') {
+    } else if (title == l10n.eventsAndFestivals) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const EventListScreen(),
         ),
       );
-    } else if (title == 'Jobs & Opportunities') {
+    } else if (title == l10n.emergencyServices) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const EmergencyServicesScreen(),
+        ),
+      );
+    } else if (title == l10n.jobsAndOpportunities) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const JobsScreen(),
         ),
       );
-    } else if (title == 'Services Directory') {
+    } else if (title == l10n.educationCorner) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const EducationCornerScreen(),
+        ),
+      );
+    } else if (title == l10n.marketPrices) {
+      final appState = context.read<AppState>();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MarketPricesScreen(
+            userCity: appState.selectedCity,
+          ),
+        ),
+      );
+    } else if (title == l10n.servicesDirectory) {
       final appState = context.read<AppState>();
       Navigator.push(
         context,
@@ -277,6 +339,20 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
             userCity: appState.selectedCity,
             userState: appState.selectedState,
           ),
+        ),
+      );
+    } else if (title == l10n.feedbackAndSuggestions) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const FeedbackScreen(),
+        ),
+      );
+    } else if (title == l10n.homeServices) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HomeServicesScreen(),
         ),
       );
     } else {
@@ -508,9 +584,9 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
-          itemCount: _regionalServices.length,
+          itemCount: _getRegionalServices(context).length,
           itemBuilder: (context, index) {
-            final service = _regionalServices[index];
+            final service = _getRegionalServices(context)[index];
             return _buildRegionalServiceCard(service);
           },
         ),
@@ -774,9 +850,14 @@ class _CommentsSheet extends StatelessWidget {
           // Comments placeholder
           Expanded(
             child: Center(
-              child: Text(
-                'Comments coming soon...',
-                style: TextStyle(color: Colors.grey[500]),
+              child: Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Text(
+                    l10n.comingSoon,
+                    style: TextStyle(color: Colors.grey[500]),
+                  );
+                },
               ),
             ),
           ),
