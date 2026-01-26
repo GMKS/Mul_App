@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/business_model.dart';
 import '../widgets/business_teasers_carousel.dart';
 import 'business_profile_screen.dart';
+import 'business/submit_business_screen_enhanced.dart';
 import 'dart:math';
 
 class BusinessDirectoryScreen extends StatefulWidget {
@@ -288,6 +289,20 @@ class _BusinessDirectoryScreenState extends State<BusinessDirectoryScreen> {
                     return _buildBusinessCard(_filteredBusinesses[index]);
                   },
                 ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SubmitBusinessScreenEnhanced(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.add_business),
+        label: const Text('Add Business'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+      ),
     );
   }
 

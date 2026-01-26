@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../controllers/devotional_controller.dart';
-import '../models/devotional_video_model.dart';
+import '../../controllers/devotional_controller.dart';
+import '../../models/devotional_video_model.dart';
 import 'upload_devotional_video_screen.dart';
 import '../../theme/app_theme.dart';
 

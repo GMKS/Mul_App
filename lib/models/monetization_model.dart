@@ -84,11 +84,11 @@ class VideoBoost {
     };
   }
 
-  // Boost pricing
+  // Boost pricing (Updated January 2026)
   static Map<BoostDuration, double> get pricing => {
-        BoostDuration.oneDay: 99.0,
-        BoostDuration.threeDays: 249.0,
-        BoostDuration.sevenDays: 499.0,
+        BoostDuration.oneDay: 149.0,
+        BoostDuration.threeDays: 349.0,
+        BoostDuration.sevenDays: 649.0,
       };
 
   static Duration getDurationValue(BoostDuration duration) {
@@ -176,10 +176,10 @@ class AdMobConfig {
   static const String nativeAdUnitId = 'ca-app-pub-3940256099942544/2247696110';
 
   // Ad frequency in feed (show ad every N videos)
-  static const int adFrequencyInFeed = 5;
+  static const int adFrequencyInFeed = 4;
 
-  // Reward for watching rewarded ad
-  static const int rewardCoins = 10;
+  // Reward for watching rewarded ad (Updated January 2026)
+  static const int rewardCoins = 20;
 }
 
 // Creator earnings tracking

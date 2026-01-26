@@ -41,12 +41,21 @@ class _AQIWidgetState extends State<AQIWidget>
   }
 
   @override
+  void didUpdateWidget(AQIWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload AQI data when widget is rebuilt
+    _loadAQI();
+  }
+
+  @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
 
   Future<void> _loadAQI() async {
+    // Clear old cache and get fresh data
+    await AQIService.clearCache();
     final data = await AQIService.getCurrentAQI();
     if (mounted) {
       setState(() {
@@ -165,6 +174,8 @@ class _AQIWidgetState extends State<AQIWidget>
 
   Widget _buildFullWidget() {
     final color = Color(AQIService.getColorValue(_aqiData!.aqi));
+    // White background for better text visibility
+    const backgroundColor = Color(0xFFFFFFFF); // Pure white
 
     return GestureDetector(
       onTap: _toggleExpand,
@@ -172,29 +183,45 @@ class _AQIWidgetState extends State<AQIWidget>
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.withOpacity(0.1),
-              color.withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withOpacity(0.5), width: 2),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 10,
+              color: color.withOpacity(0.12),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           children: [
+            // Title Header
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.air,
+                    size: 22,
+                    color: color,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Air Quality Index',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             // Main AQI Display
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Row(
                 children: [
                   // AQI Circle

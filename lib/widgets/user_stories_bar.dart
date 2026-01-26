@@ -13,6 +13,7 @@ class StoryItem {
   final String? videoUrl;
   final bool isViewed;
   final bool isSponsored;
+  final bool isLive;
   final DateTime createdAt;
 
   StoryItem({
@@ -24,6 +25,7 @@ class StoryItem {
     this.videoUrl,
     this.isViewed = false,
     this.isSponsored = false,
+    this.isLive = false,
     required this.createdAt,
   });
 }
@@ -59,14 +61,54 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
     // Mock stories data
     final random = Random();
     final mockUsers = [
-      {'name': 'Temple Live', 'avatar': '🛕', 'sponsored': false},
-      {'name': 'Daily Bhajan', 'avatar': '🎵', 'sponsored': false},
-      {'name': 'Local News', 'avatar': '📰', 'sponsored': true},
-      {'name': 'Festival Updates', 'avatar': '🎉', 'sponsored': false},
-      {'name': 'Business Deals', 'avatar': '💼', 'sponsored': true},
-      {'name': 'Health Tips', 'avatar': '💊', 'sponsored': false},
-      {'name': 'Event Alerts', 'avatar': '📅', 'sponsored': false},
-      {'name': 'Community', 'avatar': '👥', 'sponsored': false},
+      {
+        'name': 'Temple Live',
+        'avatar': '🛕',
+        'sponsored': false,
+        'isLive': true
+      },
+      {
+        'name': 'Daily Bhajan',
+        'avatar': '🎵',
+        'sponsored': false,
+        'isLive': false
+      },
+      {
+        'name': 'Local News',
+        'avatar': '📰',
+        'sponsored': true,
+        'isLive': false
+      },
+      {
+        'name': 'Festival Updates',
+        'avatar': '🎉',
+        'sponsored': false,
+        'isLive': false
+      },
+      {
+        'name': 'Business Deals',
+        'avatar': '💼',
+        'sponsored': true,
+        'isLive': false
+      },
+      {
+        'name': 'Health Tips',
+        'avatar': '💊',
+        'sponsored': false,
+        'isLive': false
+      },
+      {
+        'name': 'Event Alerts',
+        'avatar': '📅',
+        'sponsored': false,
+        'isLive': false
+      },
+      {
+        'name': 'Community',
+        'avatar': '👥',
+        'sponsored': false,
+        'isLive': false
+      },
     ];
 
     setState(() {
@@ -77,8 +119,9 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
           userId: 'user_${entry.key}',
           userName: user['name'] as String,
           userAvatar: user['avatar'] as String,
-          isViewed: random.nextBool(),
+          isViewed: user['isLive'] == true ? false : random.nextBool(),
           isSponsored: user['sponsored'] as bool,
+          isLive: user['isLive'] as bool,
           createdAt:
               DateTime.now().subtract(Duration(hours: random.nextInt(24))),
         );
@@ -220,7 +263,7 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
   }
 
   Widget _buildStoryItem(StoryItem story) {
-    final bool hasUnviewedStory = !story.isViewed;
+    final bool hasUnviewedStory = !story.isViewed || story.isLive;
 
     return GestureDetector(
       onTap: () => widget.onStoryTap?.call(story),
@@ -231,44 +274,92 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Story Avatar with gradient border
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: hasUnviewedStory
-                    ? const LinearGradient(
-                        colors: [
-                          Color(0xFFFF6B6B),
-                          Color(0xFFFF8E53),
-                          Color(0xFFFFD93D),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: hasUnviewedStory ? null : Colors.grey[300],
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: Container(
-                  width: 55,
-                  height: 55,
+            Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _getAvatarColor(story.userName),
+                    gradient: story.isLive
+                        ? const LinearGradient(
+                            colors: [
+                              Color(0xFFFF0000),
+                              Color(0xFFFF4444),
+                              Color(0xFFFF0000),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : hasUnviewedStory
+                            ? const LinearGradient(
+                                colors: [
+                                  Color(0xFFFF6B6B),
+                                  Color(0xFFFF8E53),
+                                  Color(0xFFFFD93D),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                    color: (hasUnviewedStory || story.isLive)
+                        ? null
+                        : Colors.grey[300],
                   ),
-                  child: Center(
-                    child: Text(
-                      story.userAvatar,
-                      style: const TextStyle(fontSize: 28),
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: Container(
+                      width: 55,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _getAvatarColor(story.userName),
+                      ),
+                      child: Center(
+                        child: Text(
+                          story.userAvatar,
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                // Live Badge
+                if (story.isLive)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.4),
+                              blurRadius: 4,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 6),
             // User Name with Sponsored badge

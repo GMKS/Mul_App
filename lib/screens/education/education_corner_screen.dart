@@ -73,29 +73,32 @@ class _EducationCornerScreenState extends State<EducationCornerScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildLearnTab(),
-          _buildLiveClassesTab(),
-          _buildPracticeTab(),
-          _buildAskAITab(),
-          _buildLibraryTab(),
-          _buildCommunityTab(),
-        ],
+      body: SafeArea(
+        bottom: false,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildLearnTab(),
+            _buildLiveClassesTab(),
+            _buildPracticeTab(),
+            _buildAskAITab(),
+            _buildLibraryTab(),
+            _buildCommunityTab(),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showQuickActions(),
         backgroundColor: Colors.teal.shade700,
         icon: const Icon(Icons.add),
-        label: const Text('Quick Actions'),
+        label: const Text('Actions'),
       ),
     );
   }
 
   Widget _buildLearnTab() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       children: [
         // Quick Access Cards
         Row(
@@ -202,7 +205,7 @@ class _EducationCornerScreenState extends State<EducationCornerScreen>
           crossAxisCount: 3,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 0.85,
+          childAspectRatio: 1.0,
           children: [
             _SubjectCard(
               title: 'Mathematics',
@@ -344,7 +347,7 @@ class _EducationCornerScreenState extends State<EducationCornerScreen>
 
   Widget _buildLiveClassesTab() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       children: [
         // Live Now Banner
         Container(
@@ -461,7 +464,7 @@ class _EducationCornerScreenState extends State<EducationCornerScreen>
 
   Widget _buildPracticeTab() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       children: [
         // Daily Practice
         Card(
@@ -716,63 +719,66 @@ class _EducationCornerScreenState extends State<EducationCornerScreen>
         ),
 
         // Input Box
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.shade300,
-                blurRadius: 5,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.image),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Upload image to scan questions')),
-                  );
-                },
-                color: Colors.teal.shade700,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _askQuestionController,
-                  decoration: InputDecoration(
-                    hintText: 'Ask anything...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  maxLines: null,
+        SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.shade300,
+                  blurRadius: 5,
+                  offset: const Offset(0, -2),
                 ),
-              ),
-              const SizedBox(width: 8),
-              CircleAvatar(
-                backgroundColor: Colors.teal.shade700,
-                child: IconButton(
-                  icon: const Icon(Icons.send, color: Colors.white),
+              ],
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.image),
                   onPressed: () {
-                    if (_askQuestionController.text.isNotEmpty) {
-                      _sendQuestion(_askQuestionController.text);
-                      _askQuestionController.clear();
-                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Upload image to scan questions')),
+                    );
                   },
+                  color: Colors.teal.shade700,
                 ),
-              ),
-            ],
+                Expanded(
+                  child: TextField(
+                    controller: _askQuestionController,
+                    decoration: InputDecoration(
+                      hintText: 'Ask anything...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    maxLines: null,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: Colors.teal.shade700,
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: () {
+                      if (_askQuestionController.text.isNotEmpty) {
+                        _sendQuestion(_askQuestionController.text);
+                        _askQuestionController.clear();
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -781,7 +787,7 @@ class _EducationCornerScreenState extends State<EducationCornerScreen>
 
   Widget _buildLibraryTab() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       children: [
         // Search Bar
         TextField(
@@ -887,7 +893,7 @@ class _EducationCornerScreenState extends State<EducationCornerScreen>
 
   Widget _buildCommunityTab() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       children: [
         // Study Groups
         _buildSectionHeader('Study Groups', Icons.groups),
@@ -1122,7 +1128,7 @@ class _SubjectCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [color.withOpacity(0.1), color.withOpacity(0.2)],
@@ -1134,23 +1140,23 @@ class _SubjectCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 36, color: color),
-              const SizedBox(height: 8),
+              Icon(icon, size: 28, color: color),
+              const SizedBox(height: 4),
               Text(
                 title,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: 11,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 count,
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 9,
                   color: Colors.grey.shade600,
                 ),
               ),

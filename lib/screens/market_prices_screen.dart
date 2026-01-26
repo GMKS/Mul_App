@@ -24,15 +24,22 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
   List<RegionalCommodity> _commodities = [];
   List<TradingSignal> _signals = [];
   List<MarketNews> _news = [];
+  List<Stock> _stocks = [];
+  List<GlobalMarket> _globalMarkets = [];
+  List<TradeSuggestion> _tradeSuggestions = [];
 
   bool _isLoading = true;
   StreamSubscription? _niftySubscription;
   StreamSubscription? _bankNiftySubscription;
+  StreamSubscription? _indicesSubscription;
+  StreamSubscription? _stocksSubscription;
+  StreamSubscription? _globalMarketsSubscription;
+  StreamSubscription? _tradeSuggestionsSubscription;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _loadData();
     _startRealTimeUpdates();
   }
@@ -42,6 +49,10 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
     _tabController.dispose();
     _niftySubscription?.cancel();
     _bankNiftySubscription?.cancel();
+    _indicesSubscription?.cancel();
+    _stocksSubscription?.cancel();
+    _globalMarketsSubscription?.cancel();
+    _tradeSuggestionsSubscription?.cancel();
     _service.stopRealTimeUpdates();
     super.dispose();
   }
@@ -55,6 +66,9 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
         _service.fetchRegionalCommodities(widget.userCity ?? 'Hyderabad'),
         _service.fetchTradingSignals(),
         _service.fetchMarketNews(),
+        _service.fetchPopularStocks(),
+        _service.fetchGlobalMarkets(),
+        _service.fetchTradeSuggestions(),
       ]);
 
       setState(() {
@@ -62,6 +76,9 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
         _commodities = results[1] as List<RegionalCommodity>;
         _signals = results[2] as List<TradingSignal>;
         _news = results[3] as List<MarketNews>;
+        _stocks = results[4] as List<Stock>;
+        _globalMarkets = results[5] as List<GlobalMarket>;
+        _tradeSuggestions = results[6] as List<TradeSuggestion>;
         _isLoading = false;
       });
     } catch (e) {
@@ -77,22 +94,64 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
   void _startRealTimeUpdates() {
     _service.startRealTimeUpdates();
 
+    // Listen to all indices updates
+    _indicesSubscription = _service.indicesStream.listen((indices) {
+      if (mounted) {
+        setState(() {
+          _indices = indices;
+        });
+      }
+    });
+
+    // Listen to stocks updates
+    _stocksSubscription = _service.stocksStream.listen((stocks) {
+      if (mounted) {
+        setState(() {
+          _stocks = stocks;
+        });
+      }
+    });
+
+    // Listen to global markets updates
+    _globalMarketsSubscription = _service.globalMarketsStream.listen((markets) {
+      if (mounted) {
+        setState(() {
+          _globalMarkets = markets;
+        });
+      }
+    });
+
+    // Listen to trade suggestions updates (dynamic based on stock performance)
+    _tradeSuggestionsSubscription =
+        _service.tradeSuggestionsStream.listen((suggestions) {
+      if (mounted) {
+        setState(() {
+          _tradeSuggestions = suggestions;
+        });
+      }
+    });
+
+    // Keep individual index streams for backwards compatibility
     _niftySubscription = _service.niftyStream.listen((index) {
-      setState(() {
-        final idx = _indices.indexWhere((i) => i.id == 'nifty50');
-        if (idx != -1) {
-          _indices[idx] = index;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          final idx = _indices.indexWhere((i) => i.id == 'nifty50');
+          if (idx != -1) {
+            _indices[idx] = index;
+          }
+        });
+      }
     });
 
     _bankNiftySubscription = _service.bankNiftyStream.listen((index) {
-      setState(() {
-        final idx = _indices.indexWhere((i) => i.id == 'banknifty');
-        if (idx != -1) {
-          _indices[idx] = index;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          final idx = _indices.indexWhere((i) => i.id == 'banknifty');
+          if (idx != -1) {
+            _indices[idx] = index;
+          }
+        });
+      }
     });
   }
 
@@ -103,9 +162,47 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
       appBar: AppBar(
         backgroundColor: const Color(0xFF16213e),
         elevation: 0,
-        title: const Text(
-          'Market Prices',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Row(
+          children: [
+            Flexible(
+              child: const Text(
+                'Market Prices',
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'LIVE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -126,13 +223,17 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white60,
+          isScrollable: true,
           tabs: const [
-            Tab(text: 'Indices', icon: Icon(Icons.trending_up, size: 20)),
+            Tab(text: 'Indices', icon: Icon(Icons.trending_up, size: 18)),
+            Tab(text: 'Stocks', icon: Icon(Icons.show_chart, size: 18)),
+            Tab(text: 'Global', icon: Icon(Icons.public, size: 18)),
+            Tab(text: 'Trades', icon: Icon(Icons.lightbulb_outline, size: 18)),
             Tab(
                 text: 'Commodities',
-                icon: Icon(Icons.shopping_basket, size: 20)),
-            Tab(text: 'Signals', icon: Icon(Icons.analytics, size: 20)),
-            Tab(text: 'News', icon: Icon(Icons.newspaper, size: 20)),
+                icon: Icon(Icons.shopping_basket, size: 18)),
+            Tab(text: 'Signals', icon: Icon(Icons.analytics, size: 18)),
+            Tab(text: 'News', icon: Icon(Icons.newspaper, size: 18)),
           ],
         ),
       ),
@@ -142,6 +243,9 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
               controller: _tabController,
               children: [
                 _buildIndicesTab(),
+                _buildStocksTab(),
+                _buildGlobalMarketsTab(),
+                _buildTradeSuggestionsTab(),
                 _buildCommoditiesTab(),
                 _buildSignalsTab(),
                 _buildNewsTab(),
@@ -967,5 +1071,881 @@ class _MarketPricesScreenState extends State<MarketPricesScreen>
         ],
       ),
     );
+  }
+
+  // Stocks Tab
+  Widget _buildStocksTab() {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        children: [
+          // Live indicator banner
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue[700]!, Colors.blue[500]!],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Live Updates Every 3 Seconds',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+              ],
+            ),
+          ),
+          // Header with stock count
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  'Top Stocks',
+                  style: TextStyle(
+                    color: Colors.grey[300],
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${_stocks.length} stocks',
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Stocks list
+          ..._stocks.map((stock) => _buildStockCard(stock)),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStockCard(Stock stock) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213e),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: stock.isPositive
+              ? Colors.green.withOpacity(0.3)
+              : Colors.red.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => _showStockDetails(stock),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stock.symbol,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        stock.name,
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '₹${stock.currentPrice.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          stock.isPositive
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward,
+                          color: stock.performanceColor,
+                          size: 16,
+                        ),
+                        Text(
+                          '${stock.changePercent.toStringAsFixed(2)}%',
+                          style: TextStyle(
+                            color: stock.performanceColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStockMetric('P/E', stock.pe.toStringAsFixed(2)),
+                _buildStockMetric('EPS', '₹${stock.eps.toStringAsFixed(2)}'),
+                _buildStockMetric('Vol', _formatVolume(stock.volume)),
+                if (stock.analysis != null)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getSignalColor(stock.analysis!.recommendation)
+                          .withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _getSignalText(stock.analysis!.recommendation),
+                      style: TextStyle(
+                        color: _getSignalColor(stock.analysis!.recommendation),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStockMetric(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 11,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.grey[300],
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatVolume(int volume) {
+    if (volume >= 10000000) {
+      return '${(volume / 10000000).toStringAsFixed(1)}Cr';
+    } else if (volume >= 100000) {
+      return '${(volume / 100000).toStringAsFixed(1)}L';
+    }
+    return '${(volume / 1000).toStringAsFixed(1)}K';
+  }
+
+  void _showStockDetails(Stock stock) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[700],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                stock.symbol,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                stock.name,
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '₹${stock.currentPrice.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            stock.isPositive
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
+                            color: stock.performanceColor,
+                            size: 18,
+                          ),
+                          Text(
+                            '${stock.changePercent.toStringAsFixed(2)}% (₹${stock.changeValue.toStringAsFixed(2)})',
+                            style: TextStyle(
+                              color: stock.performanceColor,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Divider(color: Colors.grey),
+              const SizedBox(height: 16),
+
+              // Key Metrics
+              Text(
+                'Key Metrics',
+                style: TextStyle(
+                  color: Colors.grey[300],
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildDetailRow('Market Cap',
+                  '₹${(stock.marketCap / 10000000).toStringAsFixed(2)} Cr'),
+              _buildDetailRow('P/E Ratio', stock.pe.toStringAsFixed(2)),
+              _buildDetailRow('EPS', '₹${stock.eps.toStringAsFixed(2)}'),
+              _buildDetailRow(
+                  'Book Value', '₹${stock.bookValue.toStringAsFixed(2)}'),
+              _buildDetailRow(
+                  '52W High', '₹${stock.week52High.toStringAsFixed(2)}'),
+              _buildDetailRow(
+                  '52W Low', '₹${stock.week52Low.toStringAsFixed(2)}'),
+              _buildDetailRow('Volume', _formatVolume(stock.volume)),
+
+              // Analysis
+              if (stock.analysis != null) ...[
+                const SizedBox(height: 24),
+                const Divider(color: Colors.grey),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text(
+                      'Analyst Recommendation',
+                      style: TextStyle(
+                        color: Colors.grey[300],
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _getSignalColor(stock.analysis!.recommendation)
+                            .withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _getSignalText(stock.analysis!.recommendation),
+                        style: TextStyle(
+                          color:
+                              _getSignalColor(stock.analysis!.recommendation),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildDetailRow('Target Price',
+                    '₹${stock.analysis!.targetPrice.toStringAsFixed(2)}'),
+                _buildDetailRow('Stop Loss',
+                    '₹${stock.analysis!.stopLoss.toStringAsFixed(2)}'),
+                _buildDetailRow(
+                    'Upside', '${stock.analysis!.upside.toStringAsFixed(2)}%'),
+                _buildDetailRow('Confidence',
+                    '${(stock.analysis!.confidenceScore * 100).toStringAsFixed(0)}%'),
+                const SizedBox(height: 12),
+                Text(
+                  stock.analysis!.rationale,
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _createAlert(stock.name, stock.currentPrice);
+                  },
+                  icon: const Icon(Icons.add_alert),
+                  label: const Text('Create Price Alert'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[700],
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Global Markets Tab
+  Widget _buildGlobalMarketsTab() {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        children: [
+          // Live indicator banner
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple[700]!, Colors.purple[500]!],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Real-time Global Market Updates',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.public, color: Colors.white, size: 16),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Global Indices',
+              style: TextStyle(
+                color: Colors.grey[300],
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ..._globalMarkets.map((market) => _buildGlobalMarketCard(market)),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlobalMarketCard(GlobalMarket market) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213e),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: market.isPositive
+              ? Colors.green.withOpacity(0.3)
+              : Colors.red.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      market.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          market.country,
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: market.isOpen ? Colors.green : Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          market.isOpen ? 'Open' : 'Closed',
+                          style: TextStyle(
+                            color: market.isOpen ? Colors.green : Colors.red,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${market.currency} ${market.currentPrice.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        market.isPositive
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
+                        color: market.isPositive ? Colors.green : Colors.red,
+                        size: 16,
+                      ),
+                      Text(
+                        '${market.changePercent.toStringAsFixed(2)}%',
+                        style: TextStyle(
+                          color: market.isPositive ? Colors.green : Colors.red,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Trade Suggestions Tab
+  Widget _buildTradeSuggestionsTab() {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        children: [
+          // Live AI indicator banner
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange[700]!, Colors.orange[500]!],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'AI Suggestions Updated Live',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.psychology, color: Colors.white, size: 16),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AI Trade Suggestions',
+                  style: TextStyle(
+                    color: Colors.grey[300],
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'AI-powered trading recommendations based on live market data, technical and fundamental analysis',
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          ..._tradeSuggestions
+              .map((suggestion) => _buildTradeSuggestionCard(suggestion)),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTradeSuggestionCard(TradeSuggestion suggestion) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213e),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _getSignalColor(suggestion.action).withOpacity(0.5),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      suggestion.stockSymbol,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      suggestion.stockName,
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _getSignalColor(suggestion.action).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _getSignalText(suggestion.action),
+                  style: TextStyle(
+                    color: _getSignalColor(suggestion.action),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Key Metrics
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildTradeMetic(
+                  'Entry', '₹${suggestion.entryPrice.toStringAsFixed(2)}'),
+              _buildTradeMetic(
+                  'Target', '₹${suggestion.targetPrice.toStringAsFixed(2)}'),
+              _buildTradeMetic(
+                  'Stop Loss', '₹${suggestion.stopLoss.toStringAsFixed(2)}'),
+              _buildTradeMetic('Return',
+                  '+${suggestion.potentialReturn.toStringAsFixed(1)}%'),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Strategy and Timeframe
+          Row(
+            children: [
+              Icon(Icons.schedule, size: 14, color: Colors.grey[500]),
+              const SizedBox(width: 4),
+              Text(
+                suggestion.timeframe,
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              ),
+              const SizedBox(width: 16),
+              Icon(Icons.trending_up, size: 14, color: Colors.grey[500]),
+              const SizedBox(width: 4),
+              Text(
+                suggestion.strategy,
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Success Probability
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Success Probability',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    LinearProgressIndicator(
+                      value: suggestion.successProbability / 100,
+                      backgroundColor: Colors.grey[800],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _getSignalColor(suggestion.action),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${suggestion.successProbability.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  color: _getSignalColor(suggestion.action),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          const Divider(color: Colors.grey),
+          const SizedBox(height: 12),
+
+          // Reasons
+          Text(
+            'Key Reasons:',
+            style: TextStyle(
+              color: Colors.grey[300],
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...suggestion.reasons.map((reason) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 6),
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[500],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        reason,
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 12,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTradeMetic(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 10,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.grey[300],
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getSignalColor(SignalType signal) {
+    switch (signal) {
+      case SignalType.strongBuy:
+        return Colors.green[700]!;
+      case SignalType.buy:
+        return Colors.green;
+      case SignalType.hold:
+        return Colors.orange;
+      case SignalType.sell:
+        return Colors.red;
+      case SignalType.strongSell:
+        return Colors.red[700]!;
+    }
+  }
+
+  String _getSignalText(SignalType signal) {
+    switch (signal) {
+      case SignalType.strongBuy:
+        return 'STRONG BUY';
+      case SignalType.buy:
+        return 'BUY';
+      case SignalType.hold:
+        return 'HOLD';
+      case SignalType.sell:
+        return 'SELL';
+      case SignalType.strongSell:
+        return 'STRONG SELL';
+    }
   }
 }

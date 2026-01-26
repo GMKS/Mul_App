@@ -18,8 +18,10 @@ import '../../../screens/emergency/emergency_services_screen.dart';
 import '../../../screens/market_prices_screen.dart';
 import '../../../screens/feedback_screen.dart';
 import '../../../screens/home_services_screen.dart';
+import '../../../screens/community_help_screen.dart';
 import '../../../services/auth_service.dart';
 import '../../../screens/login_screen.dart';
+import '../../../widgets/aqi_widget.dart';
 import '../models/models.dart';
 import '../state/regional_feed_state.dart';
 import '../services/services.dart';
@@ -128,6 +130,13 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
       duration: const Duration(milliseconds: 200),
     );
     _filterAnimationController.forward();
+
+    // Listen to tab changes to update FAB
+    _mainTabController.addListener(() {
+      if (_mainTabController.indexIsChanging) {
+        setState(() {}); // Rebuild to show/hide FAB
+      }
+    });
 
     // Initialize feed with user's location
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -355,6 +364,13 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
           builder: (context) => const HomeServicesScreen(),
         ),
       );
+    } else if (title == l10n.communityHelp) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CommunityHelpScreen(),
+        ),
+      );
     } else {
       _showComingSoonDialog(title);
     }
@@ -523,26 +539,28 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white60,
             tabs: const [
-              Tab(text: 'Videos', icon: Icon(Icons.play_circle_outline)),
               Tab(text: 'Services', icon: Icon(Icons.apps)),
+              Tab(text: 'Videos', icon: Icon(Icons.play_circle_outline)),
             ],
           ),
         ),
         body: TabBarView(
           controller: _mainTabController,
           children: [
-            // Videos Tab
-            _buildVideosTab(),
             // Services Tab
             _buildServicesTab(),
+            // Videos Tab
+            _buildVideosTab(),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _handleUploadVideo,
-          backgroundColor: const Color(0xFF6C63FF),
-          icon: const Icon(Icons.video_call),
-          label: const Text('Post Video'),
-        ),
+        floatingActionButton: _mainTabController.index == 1
+            ? FloatingActionButton.extended(
+                onPressed: _handleUploadVideo,
+                backgroundColor: const Color(0xFF6C63FF),
+                icon: const Icon(Icons.video_call),
+                label: const Text('Post Video'),
+              )
+            : null,
       ),
     );
   }
@@ -575,21 +593,26 @@ class _RegionalFeedScreenState extends State<RegionalFeedScreen>
           ],
         ),
       ),
-      child: Padding(
+      child: ListView(
         padding: const EdgeInsets.all(16),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 0.85,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+        children: [
+          // Services Grid
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 0.85,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: _getRegionalServices(context).length,
+            itemBuilder: (context, index) {
+              final service = _getRegionalServices(context)[index];
+              return _buildRegionalServiceCard(service);
+            },
           ),
-          itemCount: _getRegionalServices(context).length,
-          itemBuilder: (context, index) {
-            final service = _getRegionalServices(context)[index];
-            return _buildRegionalServiceCard(service);
-          },
-        ),
+        ],
       ),
     );
   }

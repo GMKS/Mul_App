@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../regional/regional_feed_screen.dart';
 import '../business/business_feed_screen.dart';
 import '../devotional/devotional_feed_screen.dart';
+import '../settings/settings_screen.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -17,6 +18,7 @@ class _BottomNavState extends State<BottomNav> {
     RegionalFeedScreen(),
     BusinessFeedScreen(),
     DevotionalFeedScreen(),
+    SettingsScreen(),
   ];
 
   @override
@@ -32,7 +34,10 @@ class _BottomNavState extends State<BottomNav> {
           BottomNavigationBarItem(icon: Icon(Icons.public), label: 'Regional'),
           BottomNavigationBarItem(icon: Icon(Icons.store), label: 'Business'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.temple_hindu), label: 'Devotional'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.settings), label: 'Settings'),
+              icon: Icon(Icons.temple_hindu),
+              label: 'Devotional'),
         ],
       ),
     );

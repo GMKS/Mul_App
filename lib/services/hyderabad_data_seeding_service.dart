@@ -12,8 +12,10 @@ class HyderabadDataSeedingService {
         'name': 'Birla Mandir',
         'deity': 'Lord Venkateswara',
         'religion': Religion.hinduism,
-        'description': 'Stunning white marble temple atop a hillock, offering panoramic city views. Built in 1976 by the Birla family, this architectural marvel combines South Indian, Rajasthani and Utkala temple architecture.',
-        'address': 'Hill Fort Rd, Ambedkar Colony, Hussain Sagar, Hyderabad, Telangana 500063',
+        'description':
+            'Stunning white marble temple atop a hillock, offering panoramic city views. Built in 1976 by the Birla family, this architectural marvel combines South Indian, Rajasthani and Utkala temple architecture.',
+        'address':
+            'Hill Fort Rd, Ambedkar Colony, Hussain Sagar, Hyderabad, Telangana 500063',
         'latitude': 17.4062,
         'longitude': 78.4691,
         'timings': {
@@ -55,8 +57,10 @@ class HyderabadDataSeedingService {
         'name': 'Chilkur Balaji Temple',
         'deity': 'Lord Balaji (Visa God)',
         'religion': Religion.hinduism,
-        'description': 'Ancient temple famous for "Visa" blessings. Devotees perform 108 pradakshinas (circumambulation) to have their wishes fulfilled. No hundi (donation box) - runs entirely on voluntary service.',
-        'address': 'Chilkur Village, Moinabad Mandal, Hyderabad, Telangana 500075',
+        'description':
+            'Ancient temple famous for "Visa" blessings. Devotees perform 108 pradakshinas (circumambulation) to have their wishes fulfilled. No hundi (donation box) - runs entirely on voluntary service.',
+        'address':
+            'Chilkur Village, Moinabad Mandal, Hyderabad, Telangana 500075',
         'latitude': 17.3276,
         'longitude': 78.2830,
         'timings': {
@@ -93,7 +97,8 @@ class HyderabadDataSeedingService {
         'name': 'Jagannath Temple',
         'deity': 'Lord Jagannath',
         'religion': Religion.hinduism,
-        'description': 'Replica of Puri Jagannath Temple built in traditional Odisha architecture. Famous for annual Rath Yatra with three massive chariots. Serves authentic Odia mahaprasad.',
+        'description':
+            'Replica of Puri Jagannath Temple built in traditional Odisha architecture. Famous for annual Rath Yatra with three massive chariots. Serves authentic Odia mahaprasad.',
         'address': 'Banjara Hills Road No. 12, Hyderabad, Telangana 500034',
         'latitude': 17.4190,
         'longitude': 78.4476,
@@ -130,7 +135,8 @@ class HyderabadDataSeedingService {
         'name': 'Karmanghat Hanuman Temple',
         'deity': 'Lord Hanuman',
         'religion': Religion.hinduism,
-        'description': 'Ancient temple with 11-foot tall Hanuman idol in reclining posture. Famous for miraculous powers. Heavy rush on Tuesdays and Saturdays. Oil abhishekam is special offering.',
+        'description':
+            'Ancient temple with 11-foot tall Hanuman idol in reclining posture. Famous for miraculous powers. Heavy rush on Tuesdays and Saturdays. Oil abhishekam is special offering.',
         'address': 'Karmanghat, Hyderabad, Telangana 500079',
         'latitude': 17.3616,
         'longitude': 78.5506,
@@ -149,7 +155,7 @@ class HyderabadDataSeedingService {
           'Prasadam Distribution',
           'Large Parking',
           'Queue Management',
-        },
+        ],
         'offerings': [
           'Tel Abhishekam (Oil Bath)',
           'Mala (Garland)',
@@ -158,15 +164,18 @@ class HyderabadDataSeedingService {
         ],
         'rating': 4.7,
         'total_reviews': 18650,
-        'crowd_timing': 'Very heavy on Tuesday/Saturday. Visit early morning to avoid rush.',
-        'legend': 'Believed that Lord Rama installed this idol during his exile',
+        'crowd_timing':
+            'Very heavy on Tuesday/Saturday. Visit early morning to avoid rush.',
+        'legend':
+            'Believed that Lord Rama installed this idol during his exile',
       },
       {
         'id': 'hyd_temple_005',
         'name': 'Peddamma Temple',
         'deity': 'Goddess Pochamma (Peddamma)',
         'religion': Religion.hinduism,
-        'description': 'Ancient village deity temple famous for Bonalu festival. Goddess is adorned with 24-karat gold ornaments. Main celebration hub during Ashada Bonalu. Unique Telangana folk deity worship.',
+        'description':
+            'Ancient village deity temple famous for Bonalu festival. Goddess is adorned with 24-karat gold ornaments. Main celebration hub during Ashada Bonalu. Unique Telangana folk deity worship.',
         'address': 'Jubilee Hills, Hyderabad, Telangana 500033',
         'latitude': 17.4309,
         'longitude': 78.4126,
@@ -191,8 +200,10 @@ class HyderabadDataSeedingService {
         ],
         'rating': 4.5,
         'total_reviews': 6730,
-        'cultural_significance': 'Major center for Telangana folk traditions and Bonalu festival',
-        'bonalu_info': 'Bonalu is week-long festival where women carry pots (bonam) on head as offering',
+        'cultural_significance':
+            'Major center for Telangana folk traditions and Bonalu festival',
+        'bonalu_info':
+            'Bonalu is week-long festival where women carry pots (bonam) on head as offering',
       },
     ];
   }
@@ -205,7 +216,8 @@ class HyderabadDataSeedingService {
         'name': 'Maha Shivaratri Celebration 2026',
         'date': DateTime(2026, 2, 26),
         'temple': 'All Shiva Temples',
-        'description': '24-hour celebration with abhishekam every hour, cultural programs, and spiritual discourses.',
+        'description':
+            '24-hour celebration with abhishekam every hour, cultural programs, and spiritual discourses.',
         'timings': {
           'start': '6:00 AM Feb 26',
           'end': '6:00 AM Feb 27',
@@ -240,7 +252,8 @@ class HyderabadDataSeedingService {
         'date': DateTime(2026, 4, 2),
         'duration': '9 days',
         'temples': ['Birla Mandir', 'Peddamma Temple', 'All Rama Temples'],
-        'description': 'Nine-day celebration of Lord Rama\'s birth with daily kalyanam, cultural programs, and procession on 9th day.',
+        'description':
+            'Nine-day celebration of Lord Rama\'s birth with daily kalyanam, cultural programs, and procession on 9th day.',
         'schedule': [
           {'day': 1, 'activity': 'Flag hoisting, Rama Kalyanam'},
           {'day': 2, 'activity': 'Surya Puja, Vedic discourses'},
@@ -264,7 +277,8 @@ class HyderabadDataSeedingService {
         'name': 'Hanuman Jayanti',
         'date': DateTime(2026, 4, 23),
         'temples': ['Karmanghat Hanuman Temple', 'All Hanuman Temples'],
-        'description': 'Celebration of Lord Hanuman\'s birth with special tel abhishekam, Hanuman Chalisa recitation, and cultural programs.',
+        'description':
+            'Celebration of Lord Hanuman\'s birth with special tel abhishekam, Hanuman Chalisa recitation, and cultural programs.',
         'timings': {
           'start': '4:00 AM',
           'main_puja': '11:30 AM',
@@ -288,13 +302,15 @@ class HyderabadDataSeedingService {
         'name': 'Jagannath Rath Yatra',
         'date': DateTime(2026, 7, 5),
         'temple': 'Jagannath Temple, Banjara Hills',
-        'description': 'Annual chariot festival with three massive chariots carrying Lord Jagannath, Balabhadra, and Subhadra through the streets.',
+        'description':
+            'Annual chariot festival with three massive chariots carrying Lord Jagannath, Balabhadra, and Subhadra through the streets.',
         'timings': {
           'start': '5:00 AM',
           'chariot_procession': '7:00 AM',
           'return': '6:00 PM',
         },
-        'route': 'Jagannath Temple → Road No. 12 → Road No. 10 → Road No. 14 → Temple',
+        'route':
+            'Jagannath Temple → Road No. 12 → Road No. 10 → Road No. 14 → Temple',
         'highlights': [
           'Three 40-feet tall chariots',
           'Pulling chariots (voluntary)',
@@ -309,14 +325,39 @@ class HyderabadDataSeedingService {
         'date': DateTime(2026, 7, 20),
         'duration': '7 days',
         'temple': 'Peddamma Temple (Main venue)',
-        'description': 'Telangana\'s biggest folk festival honoring Goddess Mahakali. Women carry decorated pots (bonam) on their heads, traditional dances, and processions.',
+        'description':
+            'Telangana\'s biggest folk festival honoring Goddess Mahakali. Women carry decorated pots (bonam) on their heads, traditional dances, and processions.',
         'schedule': [
-          {'day': 'Sunday', 'location': 'Golconda Fort', 'activity': 'Opening ceremony'},
-          {'day': 'Monday', 'location': 'Secunderabad', 'activity': 'Lashkar Bonalu'},
-          {'day': 'Tuesday', 'location': 'Old City', 'activity': 'Old City Bonalu'},
-          {'day': 'Wednesday', 'location': 'Peddamma Temple', 'activity': 'Main Bonalu'},
-          {'day': 'Thursday', 'location': 'Ghatam procession', 'activity': 'Pot procession'},
-          {'day': 'Friday', 'location': 'Hussain Sagar', 'activity': 'Rangam (Oracle)'},
+          {
+            'day': 'Sunday',
+            'location': 'Golconda Fort',
+            'activity': 'Opening ceremony'
+          },
+          {
+            'day': 'Monday',
+            'location': 'Secunderabad',
+            'activity': 'Lashkar Bonalu'
+          },
+          {
+            'day': 'Tuesday',
+            'location': 'Old City',
+            'activity': 'Old City Bonalu'
+          },
+          {
+            'day': 'Wednesday',
+            'location': 'Peddamma Temple',
+            'activity': 'Main Bonalu'
+          },
+          {
+            'day': 'Thursday',
+            'location': 'Ghatam procession',
+            'activity': 'Pot procession'
+          },
+          {
+            'day': 'Friday',
+            'location': 'Hussain Sagar',
+            'activity': 'Rangam (Oracle)'
+          },
           {'day': 'Saturday', 'location': 'Various', 'activity': 'Culmination'},
         ],
         'cultural_significance': 'State festival of Telangana',
@@ -328,7 +369,8 @@ class HyderabadDataSeedingService {
         'start_date': DateTime(2026, 2, 1),
         'end_date': DateTime(2026, 3, 2),
         'venue': 'Birla Mandir Auditorium',
-        'description': '30-day comprehensive discourse on Bhagavad Gita by renowned scholars. Daily sessions covering all 18 chapters.',
+        'description':
+            '30-day comprehensive discourse on Bhagavad Gita by renowned scholars. Daily sessions covering all 18 chapters.',
         'timings': {
           'morning_session': '6:00 AM - 8:00 AM',
           'evening_session': '6:00 PM - 8:00 PM',
@@ -362,7 +404,8 @@ class HyderabadDataSeedingService {
         'type': 'Traffic',
         'severity': 'High',
         'title': 'Heavy Traffic Expected at Karmanghat Temple',
-        'description': 'Tuesday - Hanuman temple will see heavy crowds. Expect 2-hour delays. Alternative route via LB Nagar recommended.',
+        'description':
+            'Tuesday - Hanuman temple will see heavy crowds. Expect 2-hour delays. Alternative route via LB Nagar recommended.',
         'affected_temples': ['Karmanghat Hanuman Temple'],
         'active_from': DateTime.now(),
         'active_until': DateTime.now().add(Duration(days: 1)),
@@ -377,7 +420,8 @@ class HyderabadDataSeedingService {
         'type': 'Weather',
         'severity': 'Medium',
         'title': 'Thunderstorm Alert - Evening Prayers',
-        'description': 'Heavy thunderstorms expected 4-8 PM today. Evening aarti may be affected at hilltop temples.',
+        'description':
+            'Heavy thunderstorms expected 4-8 PM today. Evening aarti may be affected at hilltop temples.',
         'affected_temples': ['Birla Mandir', 'Chilkur Balaji'],
         'active_until': DateTime.now().add(Duration(hours: 8)),
         'safety_tips': [
@@ -391,7 +435,8 @@ class HyderabadDataSeedingService {
         'type': 'Event',
         'severity': 'Info',
         'title': 'Bonalu Festival Preparations',
-        'description': 'Peddamma Temple undergoing decorations. Some areas restricted. Main darshan unaffected.',
+        'description':
+            'Peddamma Temple undergoing decorations. Some areas restricted. Main darshan unaffected.',
         'affected_temples': ['Peddamma Temple'],
         'active_until': DateTime(2026, 7, 19),
         'note': 'Festival starts July 20',
@@ -401,7 +446,8 @@ class HyderabadDataSeedingService {
         'type': 'Maintenance',
         'severity': 'Low',
         'title': 'Birla Mandir East Wing Closed',
-        'description': 'Renovation work on east wing. Main temple open as usual. Some photo spots unavailable.',
+        'description':
+            'Renovation work on east wing. Main temple open as usual. Some photo spots unavailable.',
         'active_until': DateTime(2026, 3, 15),
       },
       {
@@ -409,7 +455,8 @@ class HyderabadDataSeedingService {
         'type': 'Emergency',
         'severity': 'High',
         'title': 'Road Closures - VIP Movement',
-        'description': 'Roads near Birla Mandir closed 3-6 PM today due to VIP visit. Plan accordingly.',
+        'description':
+            'Roads near Birla Mandir closed 3-6 PM today due to VIP visit. Plan accordingly.',
         'affected_areas': ['Khairatabad', 'Lakdikapul', 'Ambedkar Statue'],
         'active_until': DateTime.now().add(Duration(hours: 5)),
       },
@@ -451,7 +498,8 @@ class HyderabadDataSeedingService {
         'id': 'biz_002',
         'name': 'Hyderabad Pooja Bhandar',
         'type': 'Pooja Items Store',
-        'description': 'Complete range of pooja items, idols, books, and devotional articles',
+        'description':
+            'Complete range of pooja items, idols, books, and devotional articles',
         'products': [
           'God Idols (Brass, Panchaloha, Marble)',
           'Pooja Thalis',

@@ -660,3 +660,451 @@ class PortfolioImpact {
     };
   }
 }
+
+// Stock Sector
+enum StockSector {
+  banking,
+  it,
+  pharma,
+  fmcg,
+  auto,
+  energy,
+  metals,
+  realty,
+  media,
+  telecom,
+  other,
+}
+
+// Stock Model
+class Stock {
+  final String id;
+  final String symbol;
+  final String name;
+  final String exchange; // 'NSE' or 'BSE'
+  final StockSector sector;
+  final double currentPrice;
+  final double openPrice;
+  final double highPrice;
+  final double lowPrice;
+  final double previousClose;
+  final double changeValue;
+  final double changePercent;
+  final int volume;
+  final double marketCap;
+  final double pe;
+  final double eps;
+  final double bookValue;
+  final double week52High;
+  final double week52Low;
+  final DateTime lastUpdated;
+  final List<PricePoint> historicalData;
+  final StockAnalysis? analysis;
+  final TechnicalIndicators? technicals;
+  final FundamentalAnalysis? fundamentals;
+
+  Stock({
+    required this.id,
+    required this.symbol,
+    required this.name,
+    required this.exchange,
+    required this.sector,
+    required this.currentPrice,
+    required this.openPrice,
+    required this.highPrice,
+    required this.lowPrice,
+    required this.previousClose,
+    required this.changeValue,
+    required this.changePercent,
+    required this.volume,
+    required this.marketCap,
+    required this.pe,
+    required this.eps,
+    required this.bookValue,
+    required this.week52High,
+    required this.week52Low,
+    required this.lastUpdated,
+    this.historicalData = const [],
+    this.analysis,
+    this.technicals,
+    this.fundamentals,
+  });
+
+  bool get isPositive => changePercent > 0;
+
+  Color get performanceColor {
+    if (changePercent >= 3) return Colors.green[700]!;
+    if (changePercent > 0) return Colors.green;
+    if (changePercent <= -3) return Colors.red[700]!;
+    return Colors.red;
+  }
+
+  factory Stock.fromJson(Map<String, dynamic> json) {
+    return Stock(
+      id: json['id'] ?? '',
+      symbol: json['symbol'] ?? '',
+      name: json['name'] ?? '',
+      exchange: json['exchange'] ?? 'NSE',
+      sector: StockSector.values.firstWhere(
+        (e) => e.toString() == json['sector'],
+        orElse: () => StockSector.other,
+      ),
+      currentPrice: (json['currentPrice'] ?? 0).toDouble(),
+      openPrice: (json['openPrice'] ?? 0).toDouble(),
+      highPrice: (json['highPrice'] ?? 0).toDouble(),
+      lowPrice: (json['lowPrice'] ?? 0).toDouble(),
+      previousClose: (json['previousClose'] ?? 0).toDouble(),
+      changeValue: (json['changeValue'] ?? 0).toDouble(),
+      changePercent: (json['changePercent'] ?? 0).toDouble(),
+      volume: json['volume'] ?? 0,
+      marketCap: (json['marketCap'] ?? 0).toDouble(),
+      pe: (json['pe'] ?? 0).toDouble(),
+      eps: (json['eps'] ?? 0).toDouble(),
+      bookValue: (json['bookValue'] ?? 0).toDouble(),
+      week52High: (json['week52High'] ?? 0).toDouble(),
+      week52Low: (json['week52Low'] ?? 0).toDouble(),
+      lastUpdated: DateTime.parse(json['lastUpdated']),
+      historicalData: (json['historicalData'] as List?)
+              ?.map((e) => PricePoint.fromJson(e))
+              .toList() ??
+          [],
+      analysis: json['analysis'] != null
+          ? StockAnalysis.fromJson(json['analysis'])
+          : null,
+      technicals: json['technicals'] != null
+          ? TechnicalIndicators.fromJson(json['technicals'])
+          : null,
+      fundamentals: json['fundamentals'] != null
+          ? FundamentalAnalysis.fromJson(json['fundamentals'])
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'symbol': symbol,
+      'name': name,
+      'exchange': exchange,
+      'sector': sector.toString(),
+      'currentPrice': currentPrice,
+      'openPrice': openPrice,
+      'highPrice': highPrice,
+      'lowPrice': lowPrice,
+      'previousClose': previousClose,
+      'changeValue': changeValue,
+      'changePercent': changePercent,
+      'volume': volume,
+      'marketCap': marketCap,
+      'pe': pe,
+      'eps': eps,
+      'bookValue': bookValue,
+      'week52High': week52High,
+      'week52Low': week52Low,
+      'lastUpdated': lastUpdated.toIso8601String(),
+      'historicalData': historicalData.map((e) => e.toJson()).toList(),
+      'analysis': analysis?.toJson(),
+      'technicals': technicals?.toJson(),
+      'fundamentals': fundamentals?.toJson(),
+    };
+  }
+}
+
+// Stock Analysis
+class StockAnalysis {
+  final SignalType recommendation;
+  final double targetPrice;
+  final double stopLoss;
+  final double upside;
+  final double confidenceScore;
+  final String analyst;
+  final String rationale;
+  final DateTime analyzedAt;
+
+  StockAnalysis({
+    required this.recommendation,
+    required this.targetPrice,
+    required this.stopLoss,
+    required this.upside,
+    required this.confidenceScore,
+    required this.analyst,
+    required this.rationale,
+    required this.analyzedAt,
+  });
+
+  factory StockAnalysis.fromJson(Map<String, dynamic> json) {
+    return StockAnalysis(
+      recommendation: SignalType.values.firstWhere(
+        (e) => e.toString() == json['recommendation'],
+        orElse: () => SignalType.hold,
+      ),
+      targetPrice: (json['targetPrice'] ?? 0).toDouble(),
+      stopLoss: (json['stopLoss'] ?? 0).toDouble(),
+      upside: (json['upside'] ?? 0).toDouble(),
+      confidenceScore: (json['confidenceScore'] ?? 0).toDouble(),
+      analyst: json['analyst'] ?? '',
+      rationale: json['rationale'] ?? '',
+      analyzedAt: DateTime.parse(json['analyzedAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'recommendation': recommendation.toString(),
+      'targetPrice': targetPrice,
+      'stopLoss': stopLoss,
+      'upside': upside,
+      'confidenceScore': confidenceScore,
+      'analyst': analyst,
+      'rationale': rationale,
+      'analyzedAt': analyzedAt.toIso8601String(),
+    };
+  }
+}
+
+// Technical Indicators
+class TechnicalIndicators {
+  final double rsi;
+  final double macd;
+  final double sma20;
+  final double sma50;
+  final double sma200;
+  final String trend;
+  final List<String> signals;
+
+  TechnicalIndicators({
+    required this.rsi,
+    required this.macd,
+    required this.sma20,
+    required this.sma50,
+    required this.sma200,
+    required this.trend,
+    this.signals = const [],
+  });
+
+  factory TechnicalIndicators.fromJson(Map<String, dynamic> json) {
+    return TechnicalIndicators(
+      rsi: (json['rsi'] ?? 0).toDouble(),
+      macd: (json['macd'] ?? 0).toDouble(),
+      sma20: (json['sma20'] ?? 0).toDouble(),
+      sma50: (json['sma50'] ?? 0).toDouble(),
+      sma200: (json['sma200'] ?? 0).toDouble(),
+      trend: json['trend'] ?? 'neutral',
+      signals: List<String>.from(json['signals'] ?? []),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'rsi': rsi,
+      'macd': macd,
+      'sma20': sma20,
+      'sma50': sma50,
+      'sma200': sma200,
+      'trend': trend,
+      'signals': signals,
+    };
+  }
+}
+
+// Fundamental Analysis
+class FundamentalAnalysis {
+  final double roe;
+  final double debtToEquity;
+  final double currentRatio;
+  final double dividendYield;
+  final double profitGrowth;
+  final double revenueGrowth;
+  final String healthScore;
+
+  FundamentalAnalysis({
+    required this.roe,
+    required this.debtToEquity,
+    required this.currentRatio,
+    required this.dividendYield,
+    required this.profitGrowth,
+    required this.revenueGrowth,
+    required this.healthScore,
+  });
+
+  factory FundamentalAnalysis.fromJson(Map<String, dynamic> json) {
+    return FundamentalAnalysis(
+      roe: (json['roe'] ?? 0).toDouble(),
+      debtToEquity: (json['debtToEquity'] ?? 0).toDouble(),
+      currentRatio: (json['currentRatio'] ?? 0).toDouble(),
+      dividendYield: (json['dividendYield'] ?? 0).toDouble(),
+      profitGrowth: (json['profitGrowth'] ?? 0).toDouble(),
+      revenueGrowth: (json['revenueGrowth'] ?? 0).toDouble(),
+      healthScore: json['healthScore'] ?? 'neutral',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'roe': roe,
+      'debtToEquity': debtToEquity,
+      'currentRatio': currentRatio,
+      'dividendYield': dividendYield,
+      'profitGrowth': profitGrowth,
+      'revenueGrowth': revenueGrowth,
+      'healthScore': healthScore,
+    };
+  }
+}
+
+// Global Market
+class GlobalMarket {
+  final String id;
+  final String name;
+  final String symbol;
+  final String country;
+  final String currency;
+  final double currentPrice;
+  final double changeValue;
+  final double changePercent;
+  final int volume;
+  final DateTime lastUpdated;
+  final bool isOpen;
+  final List<PricePoint> historicalData;
+
+  GlobalMarket({
+    required this.id,
+    required this.name,
+    required this.symbol,
+    required this.country,
+    required this.currency,
+    required this.currentPrice,
+    required this.changeValue,
+    required this.changePercent,
+    required this.volume,
+    required this.lastUpdated,
+    required this.isOpen,
+    this.historicalData = const [],
+  });
+
+  bool get isPositive => changePercent > 0;
+
+  factory GlobalMarket.fromJson(Map<String, dynamic> json) {
+    return GlobalMarket(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      symbol: json['symbol'] ?? '',
+      country: json['country'] ?? '',
+      currency: json['currency'] ?? 'USD',
+      currentPrice: (json['currentPrice'] ?? 0).toDouble(),
+      changeValue: (json['changeValue'] ?? 0).toDouble(),
+      changePercent: (json['changePercent'] ?? 0).toDouble(),
+      volume: json['volume'] ?? 0,
+      lastUpdated: DateTime.parse(json['lastUpdated']),
+      isOpen: json['isOpen'] ?? false,
+      historicalData: (json['historicalData'] as List?)
+              ?.map((e) => PricePoint.fromJson(e))
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'symbol': symbol,
+      'country': country,
+      'currency': currency,
+      'currentPrice': currentPrice,
+      'changeValue': changeValue,
+      'changePercent': changePercent,
+      'volume': volume,
+      'lastUpdated': lastUpdated.toIso8601String(),
+      'isOpen': isOpen,
+      'historicalData': historicalData.map((e) => e.toJson()).toList(),
+    };
+  }
+}
+
+// Trade Suggestion
+class TradeSuggestion {
+  final String id;
+  final String stockSymbol;
+  final String stockName;
+  final SignalType action;
+  final double entryPrice;
+  final double targetPrice;
+  final double stopLoss;
+  final double potentialReturn;
+  final RiskLevel riskLevel;
+  final String timeframe;
+  final String strategy;
+  final List<String> reasons;
+  final double successProbability;
+  final DateTime generatedAt;
+  final DateTime expiresAt;
+  final bool isActive;
+
+  TradeSuggestion({
+    required this.id,
+    required this.stockSymbol,
+    required this.stockName,
+    required this.action,
+    required this.entryPrice,
+    required this.targetPrice,
+    required this.stopLoss,
+    required this.potentialReturn,
+    required this.riskLevel,
+    required this.timeframe,
+    required this.strategy,
+    this.reasons = const [],
+    required this.successProbability,
+    required this.generatedAt,
+    required this.expiresAt,
+    this.isActive = true,
+  });
+
+  factory TradeSuggestion.fromJson(Map<String, dynamic> json) {
+    return TradeSuggestion(
+      id: json['id'] ?? '',
+      stockSymbol: json['stockSymbol'] ?? '',
+      stockName: json['stockName'] ?? '',
+      action: SignalType.values.firstWhere(
+        (e) => e.toString() == json['action'],
+        orElse: () => SignalType.hold,
+      ),
+      entryPrice: (json['entryPrice'] ?? 0).toDouble(),
+      targetPrice: (json['targetPrice'] ?? 0).toDouble(),
+      stopLoss: (json['stopLoss'] ?? 0).toDouble(),
+      potentialReturn: (json['potentialReturn'] ?? 0).toDouble(),
+      riskLevel: RiskLevel.values.firstWhere(
+        (e) => e.toString() == json['riskLevel'],
+        orElse: () => RiskLevel.medium,
+      ),
+      timeframe: json['timeframe'] ?? '',
+      strategy: json['strategy'] ?? '',
+      reasons: List<String>.from(json['reasons'] ?? []),
+      successProbability: (json['successProbability'] ?? 0).toDouble(),
+      generatedAt: DateTime.parse(json['generatedAt']),
+      expiresAt: DateTime.parse(json['expiresAt']),
+      isActive: json['isActive'] ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'stockSymbol': stockSymbol,
+      'stockName': stockName,
+      'action': action.toString(),
+      'entryPrice': entryPrice,
+      'targetPrice': targetPrice,
+      'stopLoss': stopLoss,
+      'potentialReturn': potentialReturn,
+      'riskLevel': riskLevel.toString(),
+      'timeframe': timeframe,
+      'strategy': strategy,
+      'reasons': reasons,
+      'successProbability': successProbability,
+      'generatedAt': generatedAt.toIso8601String(),
+      'expiresAt': expiresAt.toIso8601String(),
+      'isActive': isActive,
+    };
+  }
+}

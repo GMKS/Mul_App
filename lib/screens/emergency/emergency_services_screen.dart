@@ -271,7 +271,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen>
           tabs: const [
             Tab(icon: Icon(Icons.phone_in_talk), text: 'Quick Call'),
             Tab(icon: Icon(Icons.location_on), text: 'Nearby'),
-            Tab(icon: Icon(Icons.notification_important), text: 'Alerts'),
+            Tab(icon: Icon(Icons.local_taxi), text: 'SOS Ride'),
             Tab(icon: Icon(Icons.health_and_safety), text: 'Safety'),
             Tab(icon: Icon(Icons.medical_information), text: 'Info'),
           ],
@@ -282,7 +282,7 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen>
         children: [
           _buildQuickCallTab(),
           _buildNearbyFacilitiesTab(),
-          _buildAlertsTab(),
+          _buildSOSRideTab(),
           _buildSafetyFeaturesTab(),
           _buildInfoTab(),
         ],
@@ -528,100 +528,916 @@ class _EmergencyServicesScreenState extends State<EmergencyServicesScreen>
     );
   }
 
-  Widget _buildAlertsTab() {
-    final alerts = [
-      {
-        'title': 'Heavy Rainfall Alert',
-        'description':
-            'IMD issues orange alert for Hyderabad. Expect heavy rainfall in next 24 hours.',
-        'time': '2 hours ago',
-        'type': 'weather',
-        'severity': 'high',
-      },
-      {
-        'title': 'Traffic Update',
-        'description':
-            'Heavy traffic reported on Hitech City Road due to waterlogging.',
-        'time': '30 minutes ago',
-        'type': 'traffic',
-        'severity': 'medium',
-      },
-      {
-        'title': 'Safety Advisory',
-        'description':
-            'Police advisory: Avoid isolated areas during night hours.',
-        'time': '1 day ago',
-        'type': 'safety',
-        'severity': 'medium',
-      },
-      {
-        'title': 'Health Alert',
-        'description': 'Dengue cases rising. Take preventive measures.',
-        'time': '2 days ago',
-        'type': 'health',
-        'severity': 'low',
-      },
-    ];
-
-    return Column(
+  Widget _buildSOSRideTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
       children: [
+        // Header Section
         Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.orange.shade50,
-            border: Border(bottom: BorderSide(color: Colors.orange.shade200)),
+            gradient: LinearGradient(
+              colors: [Colors.red.shade700, Colors.red.shade500],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Row(
+          child: Column(
             children: [
-              Icon(Icons.notifications_active, color: Colors.orange.shade700),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Community Alerts',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Text(
-                      'Stay informed about local incidents',
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                    ),
-                  ],
+              Icon(Icons.local_taxi, size: 48, color: Colors.white),
+              const SizedBox(height: 12),
+              const Text(
+                'Emergency SOS Ride',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-              IconButton(
-                onPressed: () {
-                  _showReportIncidentDialog();
-                },
-                icon: const Icon(Icons.add_alert),
-                color: Colors.orange.shade700,
-                tooltip: 'Report Incident',
+              const SizedBox(height: 8),
+              const Text(
+                'Instant cab to nearest police station, hospital, or safe zone',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                ),
               ),
             ],
           ),
         ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: alerts.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final alert = alerts[index];
-              return _AlertCard(
-                title: alert['title'] as String,
-                description: alert['description'] as String,
-                time: alert['time'] as String,
-                type: alert['type'] as String,
-                severity: alert['severity'] as String,
-              );
-            },
+        const SizedBox(height: 24),
+
+        // Big SOS Ride Button
+        GestureDetector(
+          onTap: () => _triggerSOSRide(),
+          child: Container(
+            height: 160,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange.shade600, Colors.deepOrange.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withOpacity(0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.directions_car,
+                    size: 48,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'BOOK SOS RIDE NOW',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Tap to book emergency ride',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // How it Works Section
+        const Text(
+          'How It Works',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        _SOSRideStep(
+          step: '1',
+          icon: Icons.touch_app,
+          title: 'Tap SOS Ride Button',
+          description: 'One tap activates emergency ride booking',
+        ),
+        _SOSRideStep(
+          step: '2',
+          icon: Icons.location_searching,
+          title: 'Auto-Detect Safe Location',
+          description:
+              'App finds nearest police station, hospital, or safe zone',
+        ),
+        _SOSRideStep(
+          step: '3',
+          icon: Icons.local_taxi,
+          title: 'Instant Cab Booking',
+          description: 'Cab is booked immediately with emergency priority',
+        ),
+        _SOSRideStep(
+          step: '4',
+          icon: Icons.notifications_active,
+          title: 'Alert Emergency Contacts',
+          description: 'SMS sent to contacts with live tracking link',
+        ),
+        _SOSRideStep(
+          step: '5',
+          icon: Icons.my_location,
+          title: 'Real-Time Tracking',
+          description: 'You and your contacts track ride in real-time',
+        ),
+        _SOSRideStep(
+          step: '6',
+          icon: Icons.check_circle,
+          title: 'Arrive Safely',
+          description: 'Reach safe location and confirm your safety',
+        ),
+
+        const SizedBox(height: 24),
+
+        // Emergency Contacts Info
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue.shade700),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Make sure to add emergency contacts in Safety tab for automatic alerts',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.blue.shade900,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  // Trigger SOS Ride with all steps
+  Future<void> _triggerSOSRide() async {
+    // Step 1: Get current location
+    if (_currentPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Getting your location...'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      await _getCurrentLocation();
+      if (_currentPosition == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Unable to get location. Please enable GPS.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Finding nearest safe location...',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Step 2: Find nearest safe locations
+    await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+
+    if (!mounted) return;
+    Navigator.pop(context); // Close loading dialog
+
+    // Step 3: Show safe location options
+    final selectedLocation = await _showSafeLocationPicker();
+    if (selectedLocation == null) return;
+
+    // Step 4: Show ride confirmation with details
+    _showRideConfirmationDialog(selectedLocation);
+  }
+
+  Future<Map<String, dynamic>?> _showSafeLocationPicker() async {
+    // Mock data for nearest safe locations
+    final safeLocations = [
+      {
+        'name': 'Cyberabad Police Station',
+        'type': 'Police Station',
+        'distance': '1.2 km',
+        'eta': '5 mins',
+        'icon': Icons.local_police,
+        'color': Colors.blue,
+      },
+      {
+        'name': 'Apollo Hospital',
+        'type': 'Hospital',
+        'distance': '2.5 km',
+        'eta': '8 mins',
+        'icon': Icons.local_hospital,
+        'color': Colors.red,
+      },
+      {
+        'name': 'KIMS Hospital',
+        'type': 'Hospital',
+        'distance': '3.1 km',
+        'eta': '10 mins',
+        'icon': Icons.local_hospital,
+        'color': Colors.red,
+      },
+    ];
+
+    return await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.location_on,
+                          color: Colors.red.shade600, size: 28),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Choose Safe Destination',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Select the nearest safe location for emergency ride',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Location list
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: safeLocations.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final location = safeLocations[index];
+                  return Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context, location),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: (location['color'] as Color)
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                location['icon'] as IconData,
+                                color: location['color'] as Color,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    location['name'] as String,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    location['type'] as String,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  location['distance'] as String,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    location['eta'] as String,
+                                    style: TextStyle(
+                                      color: Colors.green.shade700,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(Icons.arrow_forward_ios,
+                                size: 16, color: Colors.grey.shade400),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRideConfirmationDialog(Map<String, dynamic> location) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.local_taxi, color: Colors.orange.shade700),
+            const SizedBox(width: 12),
+            const Text('Confirm SOS Ride'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Emergency ride will be booked to:',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    location['icon'] as IconData,
+                    color: location['color'] as Color,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          location['name'] as String,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          '${location['distance']} • ${location['eta']} ETA',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      color: Colors.blue.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Emergency contacts will be notified with live tracking',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _bookSOSRide(location);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange.shade700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('Book SOS Ride'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _bookSOSRide(Map<String, dynamic> location) async {
+    // Show booking progress
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Booking emergency ride...',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Notifying emergency contacts',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Simulate booking API call
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (!mounted) return;
+    Navigator.pop(context); // Close loading
+
+    // Show ride tracking screen
+    _showRideTrackingScreen(location);
+  }
+
+  void _showRideTrackingScreen(Map<String, dynamic> location) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.green.shade600, Colors.green.shade700],
+                ),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.local_taxi,
+                            color: Colors.white, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'SOS Ride Active',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Emergency contacts notified',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.circle, color: Colors.green, size: 8),
+                            SizedBox(width: 6),
+                            Text(
+                              'Live',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Destination
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.grey.shade50,
+              child: Row(
+                children: [
+                  Icon(
+                    location['icon'] as IconData,
+                    color: location['color'] as Color,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          location['name'] as String,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          'Destination • ${location['eta']} away',
+                          style: TextStyle(
+                              color: Colors.grey.shade600, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Cab details
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const Text(
+                    'Driver Details',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.blue.shade100,
+                            child: const Icon(Icons.person, size: 32),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Rajesh Kumar',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star,
+                                        color: Colors.amber, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '4.8 (523 rides)',
+                                      style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () async {
+                              final uri = Uri.parse('tel:+919876543210');
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri);
+                              }
+                            },
+                            icon: const Icon(Icons.phone),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.green.shade50,
+                              foregroundColor: Colors.green.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.directions_car),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Maruti Swift',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'TS 09 AB 1234',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'White',
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Ride Status',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  _RideStatusStep(
+                    title: 'Emergency contacts notified',
+                    subtitle: 'SMS sent with live tracking link',
+                    icon: Icons.check_circle,
+                    isCompleted: true,
+                  ),
+                  _RideStatusStep(
+                    title: 'Driver arriving',
+                    subtitle: 'ETA: 2 minutes',
+                    icon: Icons.access_time,
+                    isCompleted: false,
+                    isActive: true,
+                  ),
+                  _RideStatusStep(
+                    title: 'Trip to ${location['name']}',
+                    subtitle: 'Live tracking active',
+                    icon: Icons.navigation,
+                    isCompleted: false,
+                  ),
+                  _RideStatusStep(
+                    title: 'Arrival at safe location',
+                    subtitle: 'Safety confirmation required',
+                    icon: Icons.location_on,
+                    isCompleted: false,
+                  ),
+                ],
+              ),
+            ),
+            // Bottom actions
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // Share live location
+                        Share.share(
+                          'I\'m on an emergency SOS ride. Track me: https://maps.google.com/?q=${_currentPosition?.latitude},${_currentPosition?.longitude}',
+                        );
+                      },
+                      icon: const Icon(Icons.share_location),
+                      label: const Text('Share Location'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('✅ You have reached safely!'),
+                            backgroundColor: Colors.green.shade600,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.check),
+                      label: const Text('I\'m Safe'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1593,6 +2409,167 @@ class _TrustedContactsSheet extends StatelessWidget {
             label: const Text('Add Trusted Contact'),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 50),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// SOS Ride Helper Widgets
+class _SOSRideStep extends StatelessWidget {
+  final String step;
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _SOSRideStep({
+    required this.step,
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.orange.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                step,
+                style: TextStyle(
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 18, color: Colors.grey.shade700),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RideStatusStep extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool isCompleted;
+  final bool isActive;
+
+  const _RideStatusStep({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.isCompleted = false,
+    this.isActive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isActive
+            ? Colors.blue.shade50
+            : (isCompleted ? Colors.green.shade50 : Colors.grey.shade50),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive
+              ? Colors.blue.shade200
+              : (isCompleted ? Colors.green.shade200 : Colors.grey.shade200),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isCompleted
+                  ? Colors.green
+                  : (isActive ? Colors.blue : Colors.grey.shade300),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isCompleted ? Icons.check : icon,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: isCompleted || isActive
+                        ? Colors.black
+                        : Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

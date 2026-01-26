@@ -12,6 +12,10 @@ import 'quick_actions_widget.dart';
 import 'skeleton_loaders.dart';
 import '../screens/business_feed_screen.dart';
 import '../screens/devotional/devotional_feed_screen.dart';
+import '../screens/temple/temple_live_screen.dart';
+import '../screens/bhajan/daily_bhajan_screen.dart';
+import '../screens/news/local_news_screen.dart';
+import '../screens/health/health_tips_screen.dart';
 import '../core/route_manager.dart';
 
 class EnhancedHomeFeed extends StatefulWidget {
@@ -67,6 +71,46 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
     widget.onRefresh?.call();
   }
 
+  /// Handle story tap navigation
+  void _handleStoryTap(StoryItem story) {
+    switch (story.userName) {
+      case 'Temple Live':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TempleLiveScreen()),
+        );
+        break;
+      case 'Daily Bhajan':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const DailyBhajanScreen()),
+        );
+        break;
+      case 'Local News':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LocalNewsScreen()),
+        );
+        break;
+      case 'Business Deals':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const BusinessFeedScreen()),
+        );
+        break;
+      case 'Health Tips':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HealthTipsScreen()),
+        );
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${story.userName} stories coming soon!')),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -88,7 +132,7 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
           children: [
             // 1. User Stories Bar (Top)
             UserStoriesBar(
-              onStoryTap: widget.onStoryTap,
+              onStoryTap: widget.onStoryTap ?? _handleStoryTap,
               onAddStoryTap: widget.onAddStory ??
                   () {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -97,18 +141,10 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
                   },
             ),
 
-            // 2. Gamified Streaks (Compact) + AQI - Wrapped in Flexible to allow shrink
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                alignment: WrapAlignment.spaceBetween,
-                children: const [
-                  GamifiedStreaksWidget(compact: true),
-                  AQIWidget(compact: true),
-                ],
-              ),
+            // 2. Gamified Streaks (Compact)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: GamifiedStreaksWidget(compact: true),
             ),
 
             // 3. Referral Banner (Dismissible)
@@ -135,13 +171,10 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
               },
             ),
 
-            // 5. Today's Inspiring Quote
-            const QuoteOfTheDayWidget(),
-
-            // 6. AQI Widget (Full)
+            // 5. Air Quality Index - Shows detected location
             const AQIWidget(),
 
-            // 7. Featured Businesses Carousel
+            // 6. Featured Businesses Carousel
             const BusinessTeasersCarousel(),
 
             // 8. Local Deals & Discounts

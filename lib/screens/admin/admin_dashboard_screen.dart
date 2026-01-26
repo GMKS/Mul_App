@@ -1,6 +1,3 @@
-/// Comprehensive Admin Dashboard Screen
-/// Central hub for all admin operations with modern features
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../models/user_model.dart';
@@ -12,6 +9,8 @@ import 'admin_scheduled_content_screen.dart';
 import 'admin_notification_manager_screen.dart';
 import 'admin_reports_screen.dart';
 import 'admin_audit_trail_screen.dart';
+import '../business/business_approval_screen_enhanced.dart';
+import '../../services/business_service_supabase.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final UserProfile currentUser;
@@ -26,13 +25,63 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  // Check if user is admin
   bool get _isAdmin => widget.currentUser.isAdmin;
+
+  // Add state variables for statistics
+  int _pendingCount = 0;
+  int _approvedCount = 0;
+  int _totalUsers = 0;
+  int _flaggedContent = 0;
+  int _totalContent = 0;
+  bool _isLoadingStats = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isAdmin) {
+      _loadStatistics();
+    }
+  }
+
+  // Add method to load statistics
+  Future<void> _loadStatistics() async {
+    setState(() => _isLoadingStats = true);
+
+    try {
+      final businessService = BusinessServiceSupabase();
+
+      // Load pending businesses
+      final pending = await businessService.getPendingBusinesses();
+
+      // Load approved businesses
+      final approved = await businessService.getApprovedBusinesses();
+
+      setState(() {
+        _pendingCount = pending.length;
+        _approvedCount = approved.length;
+        _totalContent = pending.length + approved.length;
+        _totalUsers = 1234; // Mock data - replace with actual user count
+        _flaggedContent = 8; // Mock data - replace with actual flagged count
+        _isLoadingStats = false;
+      });
+    } catch (e) {
+      print('Error loading statistics: $e');
+      setState(() {
+        _pendingCount = 0;
+        _approvedCount = 0;
+        _totalContent = 0;
+        _totalUsers = 0;
+        _flaggedContent = 0;
+        _isLoadingStats = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     if (!_isAdmin) {
       return Scaffold(
+        backgroundColor: const Color(0xFF0f0f1e),
         appBar: AppBar(
           title: const Text('Access Denied'),
           backgroundColor: const Color(0xFF16213e),
@@ -58,131 +107,59 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0f0f1e),
       appBar: _buildAppBar(),
-      body: _buildBody(),
+      body: _isLoadingStats
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF6366f1),
+              ),
+            )
+          : _buildBody(),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
+      title: const Text('Admin Dashboard'),
       backgroundColor: const Color(0xFF16213e),
       elevation: 0,
-      title: const Row(
-        children: [
-          Icon(Icons.admin_panel_settings, color: Colors.white),
-          SizedBox(width: 12),
-          Text(
-            'Admin Dashboard',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh, color: Colors.white),
-          onPressed: () {
-            setState(() {
-              // Refresh dashboard data
-            });
-          },
+          icon: const Icon(Icons.refresh),
+          onPressed: _loadStatistics,
+          tooltip: 'Refresh Statistics',
         ),
         IconButton(
-          icon: const Icon(Icons.settings, color: Colors.white),
+          icon: const Icon(Icons.notifications_outlined),
           onPressed: () {
-            // Settings
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminNotificationManagerScreen(),
+              ),
+            );
           },
         ),
-        const SizedBox(width: 8),
       ],
     );
   }
 
   Widget _buildBody() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Welcome section
-          _buildWelcomeSection(),
-          const SizedBox(height: 24),
-
-          // Quick stats
-          _buildQuickStats(),
-          const SizedBox(height: 24),
-
-          // Action cards grid
-          _buildActionCardsGrid(),
-          const SizedBox(height: 24),
-
-          // Recent activity
-          _buildRecentActivity(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWelcomeSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6366f1), Color(0xFF8b5cf6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return RefreshIndicator(
+      onRefresh: _loadStatistics,
+      color: const Color(0xFF6366f1),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildQuickStats(),
+            const SizedBox(height: 24),
+            _buildActionCardsGrid(),
+            const SizedBox(height: 24),
+            _buildRecentActivity(),
+          ],
         ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white.withOpacity(0.3),
-            child: Text(
-              widget.currentUser.name[0].toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, ${widget.currentUser.name}!',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Super Admin',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.verified_user, color: Colors.white),
-          ),
-        ],
       ),
     );
   }
@@ -205,7 +182,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: _buildStatCard(
                 'Pending Approvals',
-                '24',
+                '$_pendingCount',
                 Icons.pending_actions,
                 const Color(0xFFf59e0b),
               ),
@@ -214,7 +191,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: _buildStatCard(
                 'Active Users',
-                '1,234',
+                '$_totalUsers',
                 Icons.people,
                 const Color(0xFF10b981),
               ),
@@ -227,7 +204,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: _buildStatCard(
                 'Flagged Content',
-                '8',
+                '$_flaggedContent',
                 Icons.flag,
                 const Color(0xFFef4444),
               ),
@@ -236,7 +213,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: _buildStatCard(
                 'Total Content',
-                '5,678',
+                '$_totalContent',
                 Icons.video_library,
                 const Color(0xFF6366f1),
               ),
@@ -248,7 +225,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildStatCard(
-      String label, String value, IconData icon, Color color) {
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -260,16 +237,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const Spacer(),
+              Icon(icon, color: color, size: 24),
               Text(
                 value,
                 style: TextStyle(
@@ -282,7 +252,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            label,
+            title,
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
@@ -296,59 +266,84 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildActionCardsGrid() {
     final actions = [
       {
+        'title': 'Business Approvals',
+        'subtitle': 'Review submissions',
+        'icon': Icons.business_center,
+        'color': const Color(0xFF06b6d4),
+        'badge': _pendingCount > 0,
+        'badgeCount': _pendingCount,
+        'onTap': () => _navigateTo(const BusinessApprovalScreenEnhanced()),
+      },
+      {
         'title': 'Content Management',
-        'subtitle': 'Bulk operations',
-        'icon': Icons.folder_open,
-        'color': const Color(0xFF6366f1),
+        'subtitle': 'Manage videos & posts',
+        'icon': Icons.video_library,
+        'color': const Color(0xFF8b5cf6),
+        'badge': false,
+        'badgeCount': 0,
         'onTap': () => _navigateTo(const AdminContentManagementScreen()),
       },
       {
-        'title': 'Analytics',
-        'subtitle': 'Insights & trends',
-        'icon': Icons.analytics,
-        'color': const Color(0xFF10b981),
-        'onTap': () => _navigateTo(const AdminAnalyticsScreen()),
-      },
-      {
-        'title': 'Moderation',
-        'subtitle': 'AI-powered tools',
+        'title': 'User Moderation',
+        'subtitle': 'Review reports',
         'icon': Icons.shield,
-        'color': const Color(0xFFf59e0b),
+        'color': const Color(0xFFef4444),
+        'badge': _flaggedContent > 0,
+        'badgeCount': _flaggedContent,
         'onTap': () => _navigateTo(const AdminModerationScreen()),
       },
       {
-        'title': 'Roles & Access',
-        'subtitle': 'User permissions',
+        'title': 'Analytics',
+        'subtitle': 'View insights',
+        'icon': Icons.analytics,
+        'color': const Color(0xFF10b981),
+        'badge': false,
+        'badgeCount': 0,
+        'onTap': () => _navigateTo(const AdminAnalyticsScreen()),
+      },
+      {
+        'title': 'Role Management',
+        'subtitle': 'Manage permissions',
         'icon': Icons.admin_panel_settings,
-        'color': const Color(0xFF8b5cf6),
+        'color': const Color(0xFFf59e0b),
+        'badge': false,
+        'badgeCount': 0,
         'onTap': () => _navigateTo(const AdminRolesScreen()),
       },
       {
-        'title': 'Scheduled Content',
-        'subtitle': 'Publishing calendar',
-        'icon': Icons.schedule,
-        'color': const Color(0xFF3b82f6),
-        'onTap': () => _navigateTo(const AdminScheduledContentScreen()),
-      },
-      {
         'title': 'Notifications',
-        'subtitle': 'Push & alerts',
+        'subtitle': 'Send announcements',
         'icon': Icons.notifications_active,
         'color': const Color(0xFFec4899),
+        'badge': false,
+        'badgeCount': 0,
         'onTap': () => _navigateTo(const AdminNotificationManagerScreen()),
       },
       {
-        'title': 'Reports & Feedback',
-        'subtitle': 'User submissions',
-        'icon': Icons.feedback,
-        'color': const Color(0xFFef4444),
+        'title': 'Scheduled Content',
+        'subtitle': 'Manage schedule',
+        'icon': Icons.schedule,
+        'color': const Color(0xFF06b6d4),
+        'badge': false,
+        'badgeCount': 0,
+        'onTap': () => _navigateTo(const AdminScheduledContentScreen()),
+      },
+      {
+        'title': 'Reports',
+        'subtitle': 'Generate reports',
+        'icon': Icons.assessment,
+        'color': const Color(0xFF8b5cf6),
+        'badge': false,
+        'badgeCount': 0,
         'onTap': () => _navigateTo(const AdminReportsScreen()),
       },
       {
         'title': 'Audit Trail',
-        'subtitle': 'History & logs',
+        'subtitle': 'View activity logs',
         'icon': Icons.history,
-        'color': const Color(0xFF14b8a6),
+        'color': const Color(0xFF64748b),
+        'badge': false,
+        'badgeCount': 0,
         'onTap': () => _navigateTo(const AdminAuditTrailScreen()),
       },
     ];
@@ -376,13 +371,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           itemCount: actions.length,
           itemBuilder: (context, index) {
-            final action = actions[index];
             return _buildActionCard(
-              title: action['title'] as String,
-              subtitle: action['subtitle'] as String,
-              icon: action['icon'] as IconData,
-              color: action['color'] as Color,
-              onTap: action['onTap'] as VoidCallback,
+              actions[index]['title'] as String,
+              actions[index]['subtitle'] as String,
+              actions[index]['icon'] as IconData,
+              actions[index]['color'] as Color,
+              actions[index]['onTap'] as VoidCallback,
+              badge: actions[index]['badge'] as bool? ?? false,
+              badgeCount: actions[index]['badgeCount'] as int? ?? 0,
             );
           },
         ),
@@ -390,52 +386,88 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildActionCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
+  Widget _buildActionCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap, {
+    bool badge = false,
+    int badgeCount = 0,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFF1a1a2e),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withOpacity(0.3)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Stack(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    if (badge && badgeCount > 0) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFef4444),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$badgeCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 11,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 11,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -446,109 +478,90 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildRecentActivity() {
-    final activities = [
-      {
-        'action': 'Approved business listing',
-        'target': 'ABC Electronics',
-        'time': '5 minutes ago',
-        'icon': Icons.check_circle,
-        'color': const Color(0xFF10b981),
-      },
-      {
-        'action': 'Flagged content',
-        'target': 'Video #12345',
-        'time': '15 minutes ago',
-        'icon': Icons.flag,
-        'color': const Color(0xFFef4444),
-      },
-      {
-        'action': 'Added new moderator',
-        'target': 'John Doe',
-        'time': '1 hour ago',
-        'icon': Icons.person_add,
-        'color': const Color(0xFF6366f1),
-      },
-      {
-        'action': 'Sent notification',
-        'target': '1,234 users',
-        'time': '2 hours ago',
-        'icon': Icons.notifications,
-        'color': const Color(0xFFec4899),
-      },
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Recent Activity',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            TextButton(
-              onPressed: () => _navigateTo(const AdminAuditTrailScreen()),
-              child: const Text('View All'),
-            ),
-          ],
+        const Text(
+          'Recent Activity',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 16),
         Container(
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFF1a1a2e),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: activities.length,
-            separatorBuilder: (context, index) => const Divider(
-              color: Color(0xFF2a2a3e),
-              height: 1,
-            ),
-            itemBuilder: (context, index) {
-              final activity = activities[index];
-              return ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: (activity['color'] as Color).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    activity['icon'] as IconData,
-                    color: activity['color'] as Color,
-                    size: 20,
-                  ),
+          child: Column(
+            children: [
+              _buildActivityItem(
+                'New business submitted',
+                '2 minutes ago',
+                Icons.business,
+                const Color(0xFF06b6d4),
+              ),
+              const Divider(color: Colors.white10, height: 24),
+              _buildActivityItem(
+                'User reported content',
+                '15 minutes ago',
+                Icons.flag,
+                const Color(0xFFef4444),
+              ),
+              const Divider(color: Colors.white10, height: 24),
+              _buildActivityItem(
+                'New user registered',
+                '1 hour ago',
+                Icons.person_add,
+                const Color(0xFF10b981),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityItem(
+    String title,
+    String time,
+    IconData icon,
+    Color color,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-                title: Text(
-                  activity['action'] as String,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
+              ),
+              Text(
+                time,
+                style: const TextStyle(
+                  color: Colors.white60,
+                  fontSize: 12,
                 ),
-                subtitle: Text(
-                  activity['target'] as String,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 12,
-                  ),
-                ),
-                trailing: Text(
-                  activity['time'] as String,
-                  style: const TextStyle(
-                    color: Colors.white38,
-                    fontSize: 11,
-                  ),
-                ),
-              );
-            },
+              ),
+            ],
           ),
         ),
       ],

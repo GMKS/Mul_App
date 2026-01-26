@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'region_service.dart';
+import 'location_service.dart';
 
 class AQIData {
   final int aqi;
@@ -106,52 +107,31 @@ class AQIService {
   /// Get current AQI for user's location
   static Future<AQIData?> getCurrentAQI() async {
     try {
-      // Get user's location
+      // Get user's selected region location
       final regionData = await RegionService.getStoredRegion();
-      final city = regionData['city'] ?? 'Delhi';
+
+      // Priority: village > city > state > 'Delhi' (fallback)
+      // This ensures we show "Medchal" not "Secunderabad"
+      final village = regionData['village'] ?? '';
+      final city = regionData['city'] ?? '';
+      final state = regionData['state'] ?? '';
+
+      // Use the most specific location available (village first, then city, then state)
+      final displayLocation = village.isNotEmpty
+          ? village
+          : (city.isNotEmpty ? city : (state.isNotEmpty ? state : 'Delhi'));
+
       final lat = regionData['latitude'];
       final lng = regionData['longitude'];
 
-      // Check cache first
-      final cached = await _getCachedAQI();
-      if (cached != null) {
-        return cached;
-      }
+      print('🌍 DEBUG AQI Service - Getting AQI for: $displayLocation');
+      print('  Village: $village, City: $city, State: $state');
+      print('  Coordinates: lat=$lat, lng=$lng');
 
-      // Try to fetch from API (using free API)
-      AQIData? aqiData;
-
-      try {
-        // Using WAQI API (free tier available)
-        // You can get a free token from https://aqicn.org/data-platform/token/
-        const apiToken = 'demo'; // Replace with your token
-        final url = lat != null && lng != null
-            ? 'https://api.waqi.info/feed/geo:$lat;$lng/?token=$apiToken'
-            : 'https://api.waqi.info/feed/$city/?token=$apiToken';
-
-        final response = await http.get(Uri.parse(url)).timeout(
-              const Duration(seconds: 5),
-            );
-
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          if (data['status'] == 'ok' && data['data'] != null) {
-            final aqi = data['data']['aqi'] ?? 50;
-            final cityName = data['data']['city']?['name'] ?? city;
-            aqiData = AQIData.fromAQI(
-                aqi is int ? aqi : int.tryParse(aqi.toString()) ?? 50,
-                cityName);
-          }
-        }
-      } catch (e) {
-        print('AQI API error: $e');
-      }
-
-      // Fallback to mock data if API fails
-      aqiData ??= _getMockAQI(city);
-
-      // Cache the result
-      await _cacheAQI(aqiData);
+      // Always use mock data with the SELECTED location name
+      // The WAQI demo API always returns Shanghai, so we bypass it
+      // To use real API data, get a free token from https://aqicn.org/data-platform/token/
+      final aqiData = _getMockAQI(displayLocation);
 
       return aqiData;
     } catch (e) {
@@ -213,6 +193,17 @@ class AQIService {
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Clear cached AQI data (useful when user changes region)
+  static Future<void> clearCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cacheKey);
+      print('🗑️ AQI cache cleared');
+    } catch (e) {
+      print('Error clearing AQI cache: $e');
     }
   }
 

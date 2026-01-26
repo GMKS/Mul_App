@@ -5,7 +5,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:provider/provider.dart';
+import '../core/app_state.dart';
 import '../services/region_service.dart';
+import '../services/location_service.dart';
 import 'home_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_cards.dart';
@@ -31,6 +34,7 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
   String? _detectedRegion;
   bool _isLoading = false;
   bool _isAutoDetecting = true;
+  bool _isEditMode = false; // Track if user is in edit mode
 
   // Major city coordinates for Indian cities
   final Map<String, Map<String, double>> _cityCoordinates = {
@@ -723,13 +727,32 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
     setState(() => _isAutoDetecting = true);
 
     try {
-      final regionData = await RegionService.autoDetectRegion();
-      setState(() {
-        _selectedState = regionData['state'];
-        _selectedCity = regionData['city'];
-        _detectedRegion = regionData['region'];
-      });
+      // Use new LocationService for more accurate detection
+      final locationService = LocationService();
+      final locationData = await locationService.autoDetectLocation();
+
+      if (locationData != null) {
+        setState(() {
+          _selectedState = locationData.state;
+          _selectedCity = locationData.district.isNotEmpty
+              ? locationData.district
+              : locationData.city;
+          _selectedVillage =
+              locationData.village.isNotEmpty ? locationData.village : null;
+          _detectedRegion = locationData.displayString;
+        });
+        print('✅ Auto-detected location: ${locationData.displayString}');
+      } else {
+        // Fallback to RegionService
+        final regionData = await RegionService.autoDetectRegion();
+        setState(() {
+          _selectedState = regionData['state'];
+          _selectedCity = regionData['city'];
+          _detectedRegion = regionData['region'];
+        });
+      }
     } catch (e) {
+      print('Error auto-detecting region: $e');
       // Fallback to manual selection
     } finally {
       setState(() => _isAutoDetecting = false);
@@ -790,6 +813,9 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
 
       if (mounted) {
         if (widget.isInitialSetup) {
+          // Mark first launch as complete
+          await context.read<AppState>().completeFirstLaunch();
+
           // For initial setup, navigate directly to home screen
           widget.onComplete?.call();
           Navigator.of(context).pushAndRemoveUntil(
@@ -884,7 +910,10 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_selectedState != null && _selectedCity != null) ...[
+                      // Current Selection Box - Always visible when location detected
+                      if (_selectedState != null &&
+                          _selectedCity != null &&
+                          !_isEditMode) ...[
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -920,12 +949,10 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                                 icon: const Icon(Icons.edit),
                                 onPressed: () {
                                   setState(() {
-                                    _selectedState = null;
-                                    _selectedCity = null;
-                                    _selectedVillage = null;
+                                    _isEditMode = true;
                                   });
                                 },
-                                tooltip: 'Change',
+                                tooltip: 'Edit Location',
                               ),
                             ],
                           ),
@@ -933,103 +960,35 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                         const SizedBox(height: 24),
                       ],
 
-                      const Text(
-                        'State *',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: (_stateCities.containsKey(_selectedState))
-                                ? _selectedState
-                                : null,
-                            isExpanded: true,
-                            hint: const Text('Select your state'),
-                            icon: const Icon(Icons.arrow_drop_down, size: 28),
-                            items: _stateCities.keys.map((state) {
-                              return DropdownMenuItem(
-                                value: state,
-                                child: Text(state),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              print('State selected: $value');
-                              setState(() {
-                                _selectedState = value;
-                                _selectedCity = null;
-                                _selectedVillage = null;
-                              });
-                            },
+                      // Edit Mode - Show dropdowns
+                      if (_isEditMode || _selectedState == null) ...[
+                        // Back button when in edit mode
+                        if (_isEditMode) ...[
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                onPressed: () {
+                                  setState(() {
+                                    _isEditMode = false;
+                                  });
+                                },
+                                tooltip: 'Cancel',
+                              ),
+                              const Text(
+                                'Edit Location',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ),
+                          const SizedBox(height: 16),
+                        ],
 
-                      const SizedBox(height: 24),
-
-                      const Text(
-                        'District',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: (_selectedState != null &&
-                                    _selectedCity != null &&
-                                    (_stateCities[_selectedState]
-                                            ?.contains(_selectedCity) ??
-                                        false))
-                                ? _selectedCity
-                                : null,
-                            isExpanded: true,
-                            hint: const Text('Select your district'),
-                            icon: const Icon(Icons.arrow_drop_down, size: 28),
-                            items: (_stateCities[_selectedState] ?? [])
-                                .map((city) {
-                              return DropdownMenuItem(
-                                value: city,
-                                child: Text(city),
-                              );
-                            }).toList(),
-                            onChanged: _selectedState == null
-                                ? null
-                                : (value) {
-                                    print('City selected: $value');
-                                    setState(() {
-                                      _selectedCity = value;
-                                      _selectedVillage =
-                                          null; // Reset village when city changes
-                                    });
-                                  },
-                          ),
-                        ),
-                      ),
-
-                      // Village/Town dropdown (optional)
-                      if (_selectedCity != null &&
-                          _cityVillages.containsKey(_selectedCity)) ...[
-                        const SizedBox(height: 24),
                         const Text(
-                          'Village/Town (Optional)',
+                          'State *',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1045,32 +1004,129 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
-                              value: (_selectedVillage != null &&
-                                      (_cityVillages[_selectedCity]
-                                              ?.contains(_selectedVillage) ??
-                                          false))
-                                  ? _selectedVillage
+                              value: (_stateCities.containsKey(_selectedState))
+                                  ? _selectedState
                                   : null,
                               isExpanded: true,
-                              hint: const Text('Select your village/town'),
+                              hint: const Text('Select your state'),
                               icon: const Icon(Icons.arrow_drop_down, size: 28),
-                              items: (_cityVillages[_selectedCity] ?? [])
-                                  .map((village) {
+                              items: _stateCities.keys.map((state) {
                                 return DropdownMenuItem(
-                                  value: village,
-                                  child: Text(village),
+                                  value: state,
+                                  child: Text(state),
                                 );
                               }).toList(),
                               onChanged: (value) {
-                                print('Village selected: $value');
-                                setState(() => _selectedVillage = value);
+                                print('State selected: $value');
+                                setState(() {
+                                  _selectedState = value;
+                                  _selectedCity = null;
+                                  _selectedVillage = null;
+                                });
                               },
                             ),
                           ),
                         ),
-                      ],
 
-                      const SizedBox(height: 32),
+                        const SizedBox(height: 24),
+
+                        const Text(
+                          'District',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: (_selectedState != null &&
+                                      _selectedCity != null &&
+                                      (_stateCities[_selectedState]
+                                              ?.contains(_selectedCity) ??
+                                          false))
+                                  ? _selectedCity
+                                  : null,
+                              isExpanded: true,
+                              hint: const Text('Select your district'),
+                              icon: const Icon(Icons.arrow_drop_down, size: 28),
+                              items: (_stateCities[_selectedState] ?? [])
+                                  .map((city) {
+                                return DropdownMenuItem(
+                                  value: city,
+                                  child: Text(city),
+                                );
+                              }).toList(),
+                              onChanged: _selectedState == null
+                                  ? null
+                                  : (value) {
+                                      print('City selected: $value');
+                                      setState(() {
+                                        _selectedCity = value;
+                                        _selectedVillage =
+                                            null; // Reset village when city changes
+                                      });
+                                    },
+                            ),
+                          ),
+                        ),
+
+                        // Village/Town dropdown (optional)
+                        if (_selectedCity != null &&
+                            _cityVillages.containsKey(_selectedCity)) ...[
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Village/Town (Optional)',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: (_selectedVillage != null &&
+                                        (_cityVillages[_selectedCity]
+                                                ?.contains(_selectedVillage) ??
+                                            false))
+                                    ? _selectedVillage
+                                    : null,
+                                isExpanded: true,
+                                hint: const Text('Select your village/town'),
+                                icon:
+                                    const Icon(Icons.arrow_drop_down, size: 28),
+                                items: (_cityVillages[_selectedCity] ?? [])
+                                    .map((village) {
+                                  return DropdownMenuItem(
+                                    value: village,
+                                    child: Text(village),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  print('Village selected: $value');
+                                  setState(() => _selectedVillage = value);
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 32),
+                      ], // Close Edit Mode section
 
                       // Region preview
                       if (_selectedState != null) ...[

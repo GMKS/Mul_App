@@ -75,4 +75,48 @@ class AuthService {
   // Listen to auth state changes
   static Stream<AuthState> get authStateChanges =>
       _supabase.auth.onAuthStateChange;
+
+  // Email Sign In (for admin users)
+  static Future<AuthResponse?> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      debugPrint('✅ Email sign in successful: ${response.user?.id}');
+      debugPrint('✅ User email: ${response.user?.email}');
+      return response;
+    } catch (e) {
+      debugPrint('❌ Email sign in error: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      rethrow;
+    }
+  }
+
+  // Email Sign Up (for creating admin accounts)
+  static Future<AuthResponse?> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      debugPrint(
+          '🔵 Attempting sign up for: $email with password length: ${password.length}');
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+        emailRedirectTo: null, // Skip email confirmation for testing
+      );
+      debugPrint('✅ Email sign up successful: ${response.user?.id}');
+      debugPrint('✅ User email: ${response.user?.email}');
+      debugPrint('✅ Session exists: ${response.session != null}');
+      return response;
+    } catch (e) {
+      debugPrint('❌ Email sign up error: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      rethrow;
+    }
+  }
 }

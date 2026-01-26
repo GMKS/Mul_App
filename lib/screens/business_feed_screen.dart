@@ -8,10 +8,12 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../models/business_model.dart';
 import '../models/business_video_model.dart' as video_model;
+import '../services/business_service_supabase.dart';
 import 'business_profile_screen.dart';
 import 'business_video_player_screen.dart';
 import 'business/business_analytics_advanced_screen.dart';
 import 'business/business_profile_enhanced_screen.dart';
+import 'business/submit_business_screen_enhanced.dart';
 
 class BusinessFeedScreen extends StatefulWidget {
   const BusinessFeedScreen({super.key});
@@ -23,6 +25,7 @@ class BusinessFeedScreen extends StatefulWidget {
 class _BusinessFeedScreenState extends State<BusinessFeedScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _businessService = BusinessServiceSupabase();
   List<BusinessModel> _businesses = [];
   List<video_model.BusinessVideo> _videos = [];
   List<BusinessOffer> _offers = [];
@@ -40,6 +43,15 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
     'Services',
     'Healthcare',
     'Education',
+    'Shop',
+    'Restaurant',
+    'Cafe',
+    'Grocery',
+    'Pharmacy',
+    'Hospital',
+    'Salon',
+    'Gym',
+    'Other',
   ];
 
   @override
@@ -57,136 +69,94 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
 
-    // Mock data generation
-    final random = Random();
-    final now = DateTime.now();
+    try {
+      // Fetch REAL approved businesses from Supabase
+      final approvedBusinesses = await _businessService.getApprovedBusinesses();
+      print(
+          '📦 Loaded ${approvedBusinesses.length} approved businesses from database');
 
-    // Generate businesses with new features + MONETIZATION
-    _businesses = List.generate(10, (index) {
-      final isFeatured = index < 3; // First 3 are featured
-      final distance = random.nextDouble() * 15; // 0-15 km
+      final random = Random();
+      final now = DateTime.now();
 
-      // Assign subscription plans
-      SubscriptionPlan? plan;
-      DateTime? expiryDate;
-      bool isActive = false;
-
-      if (index < 2) {
-        // Premium subscribers
-        plan = SubscriptionPlan.premiumPlan;
-        expiryDate = now.add(const Duration(days: 30));
-        isActive = true;
-      } else if (index < 5) {
-        // Basic subscribers
-        plan = SubscriptionPlan.basicPlan;
-        expiryDate = now.add(const Duration(days: 15));
-        isActive = true;
+      // Use real businesses if available, otherwise show empty
+      if (approvedBusinesses.isNotEmpty) {
+        _businesses = approvedBusinesses.map<BusinessModel>((business) {
+          // Add distance for filtering (mock for now since we may not have user location)
+          final distance = random.nextDouble() * 15;
+          return business.copyWith(
+            priorityScore: business.calculatePriorityScore(),
+          );
+        }).toList();
       } else {
-        // Free tier
-        plan = SubscriptionPlan.freePlan;
+        _businesses = [];
       }
 
-      final business = BusinessModel(
-        id: 'biz_$index',
-        name: _getBusinessName(index),
-        tagline: _getTagline(index),
-        description: 'Quality services in your area',
-        category: _categories[random.nextInt(_categories.length - 1) + 1],
-        emoji: _getEmoji(index),
-        address: '${random.nextInt(999)} Main Street',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        latitude: 19.0760 + (random.nextDouble() * 0.1),
-        longitude: 72.8777 + (random.nextDouble() * 0.1),
-        phoneNumber: '98765432${10 + index}',
-        whatsappNumber: '98765432${10 + index}',
-        isApproved: true,
-        isVerified: isFeatured || random.nextBool(),
-        rating: 4.0 + random.nextDouble(),
-        reviewCount: random.nextInt(500) + 50,
-        ownerId: 'owner_$index',
-        createdAt: now.subtract(Duration(days: random.nextInt(365))),
-        updatedAt: now,
-        qrCode: 'https://app.com/business/biz_$index',
-        followers: random.nextInt(1000),
-        // NEW FEATURES
-        isFeatured: isFeatured,
-        featuredUntil: isFeatured ? now.add(const Duration(days: 7)) : null,
-        featuredRank: isFeatured ? index + 1 : null,
-        distanceFromUser: distance,
-        // MONETIZATION FEATURES
-        subscriptionPlan: plan,
-        subscriptionExpiryDate: expiryDate,
-        isSubscriptionActive: isActive,
-        engagementScore: random.nextInt(5000),
-        canToggleFeatured: plan.features.allowFeaturedListing,
-        featuredDaysRemaining: isFeatured ? random.nextInt(30) : 0,
-      );
+      // Generate videos from real businesses
+      _videos = [];
+      for (int i = 0; i < _businesses.length && i < 15; i++) {
+        final business = _businesses[i];
+        _videos.add(video_model.BusinessVideo(
+          id: 'video_${business.id}',
+          ownerId: business.ownerId,
+          videoUrl: business.videoUrl ?? 'https://example.com/video_$i.mp4',
+          thumbnailUrl: (business.images != null && business.images!.isNotEmpty)
+              ? business.images!.first
+              : 'https://picsum.photos/seed/$i/400/600',
+          productName: business.name,
+          price: 0,
+          offerTag: null,
+          businessName: business.name,
+          businessCategory: business.category,
+          city: business.city,
+          area: business.locality ?? business.address,
+          phoneNumber: business.phoneNumber,
+          whatsappNumber: business.whatsappNumber ?? business.phoneNumber,
+          views: random.nextInt(1000),
+          callClicks: random.nextInt(50),
+          whatsappClicks: random.nextInt(75),
+          isBoosted: business.isFeatured,
+          boostExpiry: business.featuredUntil,
+          createdAt: business.createdAt,
+          hashtags: ['#${business.category}', '#${business.city}'],
+          description: business.description,
+          isActive: true,
+        ));
+      }
 
-      // Calculate priority score
-      return business.copyWith(
-        priorityScore: business.calculatePriorityScore(),
-      );
-    });
+      // Generate offers from real businesses
+      _offers = [];
+      for (int i = 0; i < _businesses.length && i < 12; i++) {
+        final business = _businesses[i];
+        final hoursUntilExpiry = random.nextInt(72) + 1;
 
-    // Generate videos
-    _videos = List.generate(15, (index) {
-      final businessIndex = random.nextInt(_businesses.length);
-      final business = _businesses[businessIndex];
-      return video_model.BusinessVideo(
-        id: 'video_$index',
-        ownerId: business.ownerId,
-        videoUrl: 'https://example.com/video_$index.mp4',
-        thumbnailUrl: 'https://picsum.photos/seed/$index/400/600',
-        productName: _getProductName(index),
-        price: (random.nextDouble() * 5000) + 100,
-        offerTag: index % 3 == 0 ? _getDiscountText(index) : null,
-        businessName: business.name,
-        businessCategory: business.category,
-        city: business.city,
-        area: business.locality ?? business.address,
-        phoneNumber: business.phoneNumber,
-        whatsappNumber: business.whatsappNumber ?? business.phoneNumber,
-        views: random.nextInt(10000),
-        callClicks: random.nextInt(100),
-        whatsappClicks: random.nextInt(150),
-        isBoosted: index < 3,
-        boostExpiry:
-            index < 3 ? now.add(Duration(days: random.nextInt(7) + 1)) : null,
-        createdAt: now.subtract(Duration(hours: random.nextInt(48))),
-        hashtags: ['#${business.category}', '#${business.city}', '#deals'],
-        description:
-            'Check out our ${_getProductName(index)}! ${_getTagline(index)}',
-        isActive: true,
-      );
-    });
+        _offers.add(BusinessOffer(
+          id: 'offer_${business.id}',
+          businessId: business.id,
+          title: '${business.name} Special',
+          description: business.description,
+          imageUrl: (business.images != null && business.images!.isNotEmpty)
+              ? business.images!.first
+              : 'https://picsum.photos/seed/offer$i/600/400',
+          discountText: '${10 + (i * 5)}% OFF',
+          startDate: now.subtract(const Duration(days: 1)),
+          expiryDate: now.add(Duration(hours: hoursUntilExpiry)),
+          claimLimit: 100,
+          claimedCount: random.nextInt(50),
+          promoCode: 'SAVE${10 + i}',
+          isActive: true,
+          offerType: 'percentage',
+        ));
+      }
 
-    // Generate offers with expiry
-    _offers = List.generate(12, (index) {
-      final businessIndex = random.nextInt(_businesses.length);
-      final hoursUntilExpiry = random.nextInt(72) + 1; // 1-72 hours
-
-      return BusinessOffer(
-        id: 'offer_$index',
-        businessId: _businesses[businessIndex].id,
-        title: _getOfferTitle(index),
-        description: 'Limited time offer - Don\'t miss out!',
-        imageUrl: 'https://picsum.photos/seed/offer$index/600/400',
-        discountText: _getDiscountText(index),
-        startDate: now.subtract(const Duration(days: 1)),
-        expiryDate: now.add(Duration(hours: hoursUntilExpiry)),
-        claimLimit: random.nextInt(100) + 20,
-        claimedCount: random.nextInt(50),
-        promoCode: 'SAVE${10 + index}',
-        isActive: true,
-        offerType: ['percentage', 'fixed', 'bogo'][random.nextInt(3)],
-      );
-    });
-
-    // Sort by PRIORITY SCORE (monetization feature)
-    _businesses = BusinessMonetization.sortByPriority(_businesses);
+      // Sort by priority
+      _businesses = BusinessMonetization.sortByPriority(_businesses);
+    } catch (e) {
+      print('❌ Error loading businesses: $e');
+      _businesses = [];
+      _videos = [];
+      _offers = [];
+    }
 
     setState(() => _isLoading = false);
   }
@@ -250,6 +220,20 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SubmitBusinessScreenEnhanced(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.add_business),
+        label: const Text('Add Business'),
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
       ),
     );
   }
