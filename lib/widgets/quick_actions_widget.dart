@@ -1,7 +1,13 @@
 /// Quick Actions Widget
-/// Row of quick action buttons for common tasks
+/// Row of quick action buttons for Post, Share, Donate, Shop
 
 import 'package:flutter/material.dart';
+import '../screens/community/create_post_screen.dart';
+import '../screens/community/community_feed_screen.dart';
+import '../screens/donate/donate_screen.dart';
+import '../screens/shop/local_shop_screen.dart';
+import '../screens/devotional/devotional_feed_screen.dart';
+import '../services/share_service.dart';
 
 class QuickAction {
   final String label;
@@ -36,21 +42,25 @@ class QuickActionsWidget extends StatelessWidget {
         label: 'Post',
         icon: Icons.add_circle_outline,
         color: const Color(0xFF4CAF50),
+        onTap: () => _navigateToPost(context),
       ),
       QuickAction(
         label: 'Share',
         icon: Icons.share,
         color: const Color(0xFF2196F3),
+        onTap: () => _showShareOptions(context),
       ),
       QuickAction(
         label: 'Donate',
         icon: Icons.volunteer_activism,
         color: const Color(0xFFE91E63),
+        onTap: () => _navigateToDonate(context),
       ),
       QuickAction(
-        label: 'Shop',
-        icon: Icons.shopping_bag,
-        color: const Color(0xFFFF9800),
+        label: 'Devotional',
+        icon: Icons.self_improvement,
+        color: const Color(0xFF9C27B0),
+        onTap: () => _navigateToDevotional(context),
       ),
     ];
 
@@ -61,13 +71,128 @@ class QuickActionsWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: actionsList.map((action) {
-          return _buildActionButton(action);
+          return _buildActionButton(context, action);
         }).toList(),
       ),
     );
   }
 
-  Widget _buildActionButton(QuickAction action) {
+  /// Navigate to Post creation / Community Feed
+  void _navigateToPost(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '📝 Community Posts',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.add, color: Colors.green),
+              ),
+              title: const Text('Create New Post'),
+              subtitle: const Text('Share updates with your community'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreatePostScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.list_alt, color: Colors.blue),
+              ),
+              title: const Text('View Community Feed'),
+              subtitle: const Text('See posts from your neighborhood'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CommunityFeedScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Show Share options with verified content
+  void _showShareOptions(BuildContext context) {
+    ShareService.shareContent(
+      context: context,
+      title: 'Share from My City App',
+      description:
+          'I\'m using the local community app to stay connected with my neighborhood! Join me to discover local businesses, news, and community updates.',
+      isVerified: true,
+    );
+  }
+
+  /// Navigate to Donate screen
+  void _navigateToDonate(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DonateScreen(),
+      ),
+    );
+  }
+
+  /// Navigate to Devotional Feed screen
+  void _navigateToDevotional(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DevotionalFeedScreen(),
+      ),
+    );
+  }
+
+  /// Navigate to Local Shop screen
+  void _navigateToShop(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LocalShopScreen(),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, QuickAction action) {
     return GestureDetector(
       onTap: action.onTap ?? () => onActionTap?.call(action.label),
       child: Column(
@@ -234,15 +359,15 @@ class ReferralBannerWidget extends StatelessWidget {
 
 /// Support Local CTA Widget
 class SupportLocalCTAWidget extends StatelessWidget {
-  final VoidCallback? onDonateTap;
+  final VoidCallback? onLocalHelpTap;
   final VoidCallback? onShopTap;
-  final VoidCallback? onBookTap;
+  final VoidCallback? onConnectTap;
 
   const SupportLocalCTAWidget({
     super.key,
-    this.onDonateTap,
+    this.onLocalHelpTap,
     this.onShopTap,
-    this.onBookTap,
+    this.onConnectTap,
   });
 
   @override
@@ -307,14 +432,6 @@ class SupportLocalCTAWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildCTAButton(
-                  '🙏 Donate',
-                  Colors.pink,
-                  onDonateTap,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildCTAButton(
                   '🛒 Shop',
                   Colors.orange,
                   onShopTap,
@@ -323,9 +440,9 @@ class SupportLocalCTAWidget extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildCTAButton(
-                  '📅 Book',
+                  '🔗 Connect',
                   Colors.blue,
-                  onBookTap,
+                  onConnectTap,
                 ),
               ),
             ],

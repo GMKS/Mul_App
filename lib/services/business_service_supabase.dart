@@ -67,7 +67,13 @@ class BusinessServiceSupabase {
       if (documents != null && documents.isNotEmpty) {
         submission['documents'] = documents;
       }
-      // Note: latitude/longitude not included until DB schema is updated
+      // Include GPS coordinates if captured
+      if (latitude != null) {
+        submission['latitude'] = latitude;
+      }
+      if (longitude != null) {
+        submission['longitude'] = longitude;
+      }
 
       final response = await _supabase
           .from(_businessSubmissionsTable)

@@ -34,6 +34,7 @@ import 'business_feed_screen.dart';
 import 'marketplace_screen.dart';
 import 'community_support_screen.dart';
 import 'home_services_screen.dart';
+import 'emergency/emergency_services_screen.dart';
 import 'feedback_suggestions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -104,10 +105,10 @@ class _HomeScreenState extends State<HomeScreen>
         gradient: [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)],
       ),
       CategoryItem(
-        title: l10n.business,
-        icon: Icons.business_center,
-        color: const Color(0xFF6C63FF),
-        gradient: [const Color(0xFF6C63FF), const Color(0xFF5A52E0)],
+        title: l10n.emergencyServices,
+        icon: Icons.local_hospital,
+        color: const Color(0xFFE91E63),
+        gradient: [const Color(0xFFE91E63), const Color(0xFFC2185B)],
       ),
       CategoryItem(
         title: l10n.devotional,
@@ -122,6 +123,12 @@ class _HomeScreenState extends State<HomeScreen>
   List<Map<String, dynamic>> _getRegionalServices(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return [
+      {
+        'title': l10n.feedbackAndSuggestions,
+        'icon': Icons.feedback,
+        'color': const Color(0xFF00BCD4),
+        'gradient': [const Color(0xFF00BCD4), const Color(0xFF0097A7)]
+      },
       {
         'title': l10n.cabServices,
         'icon': Icons.local_taxi,
@@ -181,12 +188,6 @@ class _HomeScreenState extends State<HomeScreen>
         'icon': Icons.home_repair_service,
         'color': const Color(0xFF9C27B0),
         'gradient': [const Color(0xFF9C27B0), const Color(0xFF7B1FA2)]
-      },
-      {
-        'title': l10n.feedbackAndSuggestions,
-        'icon': Icons.feedback,
-        'color': const Color(0xFF00BCD4),
-        'gradient': [const Color(0xFF00BCD4), const Color(0xFF0097A7)]
       },
       {
         'title': l10n.servicesDirectory,
@@ -461,9 +462,13 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildOriginalHomeLayout() {
+    // Use city+state as key to force rebuild when location changes
+    final locationKey =
+        '${_currentUser?.city ?? ''}_${_currentUser?.state ?? ''}';
     return EnhancedHomeFeed(
+      key: ValueKey(locationKey),
       onRefresh: () async {
-        // Optionally reload user data or videos
+        // Reload user data and refresh location
         await _loadUserData();
       },
       onQuickAction: (action) {
@@ -578,15 +583,15 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SizedBox(height: 12),
           CategoryCard(
-            label: 'Business',
-            color: AppColors.category2,
-            icon: Icons.business_center,
+            label: 'Emergency Services',
+            color: const Color(0xFFE91E63),
+            icon: Icons.local_hospital,
             onTap: () {
-              print('🟠 Business card tapped - Opening Business Feed');
+              print('🚨 Emergency Services card tapped');
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const BusinessFeedScreen(),
+                  builder: (context) => const EmergencyServicesScreen(),
                 ),
               );
             },
@@ -740,7 +745,15 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _navigateToService(int index) {
     switch (index) {
-      case 0: // Cab Services
+      case 0: // Feedback & Suggestions
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const FeedbackSuggestionsScreen(),
+          ),
+        );
+        break;
+      case 1: // Cab Services
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -750,7 +763,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
         break;
-      case 1: // Local Alerts
+      case 2: // Local Alerts
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -758,15 +771,15 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
         break;
-      case 2: // Events & Festivals
-        _showComingSoonDialog(
-            _getRegionalServices(context)[2]['title'] as String);
-        break;
-      case 3: // Emergency Services
+      case 3: // Events & Festivals
         _showComingSoonDialog(
             _getRegionalServices(context)[3]['title'] as String);
         break;
-      case 4: // Jobs & Opportunities
+      case 4: // Emergency Services
+        _showComingSoonDialog(
+            _getRegionalServices(context)[4]['title'] as String);
+        break;
+      case 5: // Jobs & Opportunities
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -774,7 +787,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
         break;
-      case 5: // Education Corner
+      case 6: // Education Corner
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -782,11 +795,11 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
         break;
-      case 6: // Market Prices
+      case 7: // Market Prices
         _showComingSoonDialog(
-            _getRegionalServices(context)[6]['title'] as String);
+            _getRegionalServices(context)[7]['title'] as String);
         break;
-      case 7: // Marketplace & Classifieds
+      case 8: // Marketplace & Classifieds
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -794,7 +807,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
         break;
-      case 8: // Community Help
+      case 9: // Community Help
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -802,19 +815,11 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
         break;
-      case 9: // Home Services
+      case 10: // Home Services
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => const HomeServicesScreen(),
-          ),
-        );
-        break;
-      case 10: // Feedback & Suggestions
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const FeedbackSuggestionsScreen(),
           ),
         );
         break;

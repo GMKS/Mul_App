@@ -7,41 +7,62 @@ class LocationService {
   factory LocationService() => _instance;
   LocationService._internal();
 
+  /// Check if location services are enabled
+  Future<bool> isLocationServiceEnabled() async {
+    return await Geolocator.isLocationServiceEnabled();
+  }
+
   /// Check if location permissions are granted
   Future<bool> checkLocationPermission() async {
+    print('📍 Checking location permission...');
+
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      print('❌ Location services are disabled');
       return false;
     }
+    print('✅ Location services enabled');
 
     LocationPermission permission = await Geolocator.checkPermission();
+    print('📍 Current permission status: $permission');
+
     if (permission == LocationPermission.denied) {
+      print('📍 Requesting permission...');
       permission = await Geolocator.requestPermission();
+      print('📍 Permission after request: $permission');
       if (permission == LocationPermission.denied) {
+        print('❌ Permission denied');
         return false;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
+      print('❌ Permission denied forever - user must enable in settings');
       return false;
     }
 
+    print('✅ Permission granted: $permission');
     return true;
   }
 
   /// Get current position
   Future<Position?> getCurrentPosition() async {
     try {
+      print('📍 Getting current position...');
       final hasPermission = await checkLocationPermission();
       if (!hasPermission) {
+        print('❌ No permission to get position');
         return null;
       }
 
-      return await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
       );
+      print('✅ Got position: ${position.latitude}, ${position.longitude}');
+      return position;
     } catch (e) {
-      print('Error getting current position: $e');
+      print('❌ Error getting current position: $e');
       return null;
     }
   }
@@ -57,14 +78,37 @@ class LocationService {
 
       final place = placemarks.first;
 
+      // Debug logging to understand what data we're getting
+      print('🗺️ Reverse Geocoding Results:');
+      print('  subLocality: ${place.subLocality}');
+      print('  locality: ${place.locality}');
+      print('  subAdministrativeArea: ${place.subAdministrativeArea}');
+      print('  administrativeArea: ${place.administrativeArea}');
+      print('  thoroughfare: ${place.thoroughfare}');
+      print('  subThoroughfare: ${place.subThoroughfare}');
+      print('  name: ${place.name}');
+
+      // Priority for village/neighborhood: subLocality > thoroughfare > name
+      String village =
+          place.subLocality ?? place.thoroughfare ?? place.name ?? '';
+
+      // City should be the locality, not subLocality
+      String city = place.locality ?? place.subAdministrativeArea ?? '';
+
+      // District for wider area context
+      String district = place.subAdministrativeArea ?? place.locality ?? '';
+
+      print(
+          '  ➡️ Extracted - Village: $village, City: $city, District: $district');
+
       return LocationData(
         latitude: latitude,
         longitude: longitude,
         country: place.country ?? '',
         state: place.administrativeArea ?? '',
-        district: place.subAdministrativeArea ?? place.locality ?? '',
-        city: place.locality ?? place.subLocality ?? '',
-        village: place.subLocality ?? '',
+        district: district,
+        city: city,
+        village: village,
         postalCode: place.postalCode ?? '',
         fullAddress: _formatFullAddress(place),
       );
@@ -140,9 +184,12 @@ class LocationData {
     required this.fullAddress,
   });
 
-  /// Get formatted display string
+  /// Get formatted display string - prioritize village/locality for more specific location
   String get displayString {
-    if (city.isNotEmpty && state.isNotEmpty) {
+    // Priority: village > city > district > state
+    if (village.isNotEmpty && village != city) {
+      return '$village, $city';
+    } else if (city.isNotEmpty && state.isNotEmpty) {
       return '$city, $state';
     } else if (district.isNotEmpty && state.isNotEmpty) {
       return '$district, $state';

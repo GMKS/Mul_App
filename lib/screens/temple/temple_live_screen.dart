@@ -1,5 +1,5 @@
-/// Temple Live Screen
-/// Main screen showing live temple streams and temple directory
+/// Place of Worship Screen
+/// Main screen showing live worship streams and worship place directory
 
 import 'package:flutter/material.dart';
 import '../../models/temple_live_model.dart';
@@ -98,8 +98,8 @@ class _TempleLiveScreenState extends State<TempleLiveScreen>
       appBar: AppBar(
         title: const Row(
           children: [
-            Text('🛕 ', style: TextStyle(fontSize: 24)),
-            Text('Temple Live'),
+            Text('� ', style: TextStyle(fontSize: 24)),
+            Text('Place of Worship'),
           ],
         ),
         backgroundColor: const Color(0xFFFF6B00),

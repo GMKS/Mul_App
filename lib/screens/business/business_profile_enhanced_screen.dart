@@ -139,6 +139,25 @@ class _BusinessProfileEnhancedScreenState
                     images[index],
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => _buildGradientBackground(),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _buildGradientBackground(),
+                          Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white.withOpacity(0.8),
+                              strokeWidth: 2,
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
               )
@@ -222,25 +241,83 @@ class _BusinessProfileEnhancedScreenState
   }
 
   Widget _buildGradientBackground() {
+    // Generate consistent colors based on business name
+    final colorIndex =
+        widget.business.name.hashCode.abs() % _gradientColorPairs.length;
+    final colors = _gradientColorPairs[colorIndex];
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.shade700,
-            Colors.purple.shade600,
-          ],
+          colors: colors,
         ),
       ),
-      child: Center(
-        child: Text(
-          widget.business.emoji,
-          style: const TextStyle(fontSize: 100),
-        ),
+      child: Stack(
+        children: [
+          // Decorative circles
+          Positioned(
+            right: -50,
+            top: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -30,
+            bottom: 50,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 20,
+            bottom: 100,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+          ),
+          // Emoji in center
+          Center(
+            child: Text(
+              widget.business.emoji.isNotEmpty ? widget.business.emoji : '🏪',
+              style: const TextStyle(fontSize: 100),
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  // Gradient color pairs for business backgrounds
+  static const List<List<Color>> _gradientColorPairs = [
+    [Color(0xFF667EEA), Color(0xFF764BA2)], // Purple-Blue
+    [Color(0xFFF093FB), Color(0xFFF5576C)], // Pink-Red
+    [Color(0xFF4FACFE), Color(0xFF00F2FE)], // Blue-Cyan
+    [Color(0xFF43E97B), Color(0xFF38F9D7)], // Green-Teal
+    [Color(0xFFFFA726), Color(0xFFFF5722)], // Orange-Red
+    [Color(0xFF11998E), Color(0xFF38EF7D)], // Teal-Green
+    [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Purple
+    [Color(0xFFFC5C7D), Color(0xFF6A82FB)], // Pink-Blue
+    [Color(0xFFED4264), Color(0xFFFFEDBC)], // Red-Yellow
+    [Color(0xFF00B4DB), Color(0xFF0083B0)], // Sky-Blue
+  ];
 
   Widget _buildAppBarAction(IconData icon, VoidCallback onTap) {
     return Container(

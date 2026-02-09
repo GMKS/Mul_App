@@ -43,6 +43,149 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
     debugPrint('📊 Profile view tracked for ${widget.business.name}');
   }
 
+  // Build a nice fallback widget for logo when image fails to load
+  Widget _buildLogoFallback() {
+    // Generate a color based on business name for consistency
+    final colorIndex =
+        widget.business.name.hashCode.abs() % _fallbackColors.length;
+    final bgColor = _fallbackColors[colorIndex];
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [bgColor, bgColor.withOpacity(0.7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Center(
+        child: widget.business.emoji.isNotEmpty
+            ? Text(
+                widget.business.emoji,
+                style: const TextStyle(fontSize: 40),
+              )
+            : Text(
+                widget.business.name.isNotEmpty
+                    ? widget.business.name[0].toUpperCase()
+                    : '🏪',
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
+
+  // Fallback colors for logo placeholder
+  static const List<Color> _fallbackColors = [
+    Color(0xFF6366F1), // Indigo
+    Color(0xFF8B5CF6), // Violet
+    Color(0xFFEC4899), // Pink
+    Color(0xFFEF4444), // Red
+    Color(0xFFF97316), // Orange
+    Color(0xFFEAB308), // Yellow
+    Color(0xFF22C55E), // Green
+    Color(0xFF14B8A6), // Teal
+    Color(0xFF0EA5E9), // Sky
+    Color(0xFF3B82F6), // Blue
+  ];
+
+  // Build cover image fallback with category-based gradient
+  Widget _buildCoverFallback({bool showLoading = false}) {
+    final colorIndex =
+        widget.business.name.hashCode.abs() % _fallbackColors.length;
+    final primaryColor = _fallbackColors[colorIndex];
+    final secondaryColor =
+        _fallbackColors[(colorIndex + 1) % _fallbackColors.length];
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primaryColor, secondaryColor.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Decorative circles
+          Positioned(
+            right: -50,
+            top: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -30,
+            bottom: -30,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+          ),
+          // Emoji in center
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  widget.business.emoji.isNotEmpty
+                      ? widget.business.emoji
+                      : '🏪',
+                  style: const TextStyle(fontSize: 70),
+                ),
+                if (showLoading) ...[
+                  const SizedBox(height: 16),
+                  const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build product image placeholder
+  Widget _buildProductImagePlaceholder(String productName) {
+    final colorIndex = productName.hashCode.abs() % _fallbackColors.length;
+    final bgColor = _fallbackColors[colorIndex];
+
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [bgColor.withOpacity(0.3), bgColor.withOpacity(0.1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.shopping_bag_outlined,
+          size: 40,
+          color: bgColor.withOpacity(0.7),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,36 +246,19 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
           fit: StackFit.expand,
           children: [
             // Cover Image
-            if (widget.business.coverImageUrl != null)
+            if (widget.business.coverImageUrl != null &&
+                widget.business.coverImageUrl!.isNotEmpty)
               Image.network(
                 widget.business.coverImageUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stack) => Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade700, Colors.blue.shade400],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                ),
+                errorBuilder: (context, error, stack) => _buildCoverFallback(),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return _buildCoverFallback(showLoading: true);
+                },
               )
             else
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue.shade700, Colors.blue.shade400],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    widget.business.emoji,
-                    style: const TextStyle(fontSize: 80),
-                  ),
-                ),
-              ),
+              _buildCoverFallback(),
 
             // Gradient overlay
             Container(
@@ -169,20 +295,34 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
                         ),
                       ],
                     ),
-                    child: widget.business.logoUrl != null
+                    child: widget.business.logoUrl != null &&
+                            widget.business.logoUrl!.isNotEmpty
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(13),
                             child: Image.network(
                               widget.business.logoUrl!,
                               fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildLogoFallback();
+                              },
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                );
+                              },
                             ),
                           )
-                        : Center(
-                            child: Text(
-                              widget.business.emoji,
-                              style: const TextStyle(fontSize: 40),
-                            ),
-                          ),
+                        : _buildLogoFallback(),
                   ),
                   const SizedBox(width: 12),
 
@@ -682,18 +822,27 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(12),
             ),
-            child: product.imageUrl != null
+            child: product.imageUrl != null && product.imageUrl!.isNotEmpty
                 ? Image.network(
                     product.imageUrl!,
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildProductImagePlaceholder(product.name);
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 120,
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    },
                   )
-                : Container(
-                    height: 120,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image, size: 40),
-                  ),
+                : _buildProductImagePlaceholder(product.name),
           ),
 
           Padding(

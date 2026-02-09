@@ -10,7 +10,10 @@ import 'admin_notification_manager_screen.dart';
 import 'admin_reports_screen.dart';
 import 'admin_audit_trail_screen.dart';
 import '../business/business_approval_screen_enhanced.dart';
+import '../business/featured_business_screen.dart';
 import '../../services/business_service_supabase.dart';
+import 'admin_approval_screen.dart';
+import '../../services/local_deals_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final UserProfile currentUser;
@@ -33,6 +36,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _totalUsers = 0;
   int _flaggedContent = 0;
   int _totalContent = 0;
+  int _pendingDealsCount = 0;
   bool _isLoadingStats = true;
 
   @override
@@ -49,6 +53,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     try {
       final businessService = BusinessServiceSupabase();
+      final dealsService = LocalDealsService();
 
       // Load pending businesses
       final pending = await businessService.getPendingBusinesses();
@@ -56,9 +61,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       // Load approved businesses
       final approved = await businessService.getApprovedBusinesses();
 
+      // Load pending deals
+      final pendingDeals = await dealsService.getPendingDeals();
+
       setState(() {
         _pendingCount = pending.length;
         _approvedCount = approved.length;
+        _pendingDealsCount = pendingDeals.length;
         _totalContent = pending.length + approved.length;
         _totalUsers = 1234; // Mock data - replace with actual user count
         _flaggedContent = 8; // Mock data - replace with actual flagged count
@@ -69,6 +78,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       setState(() {
         _pendingCount = 0;
         _approvedCount = 0;
+        _pendingDealsCount = 0;
         _totalContent = 0;
         _totalUsers = 0;
         _flaggedContent = 0;
@@ -273,6 +283,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'badge': _pendingCount > 0,
         'badgeCount': _pendingCount,
         'onTap': () => _navigateTo(const BusinessApprovalScreenEnhanced()),
+      },
+      {
+        'title': 'Local Deals Approval',
+        'subtitle': 'Review pending deals',
+        'icon': Icons.local_offer,
+        'color': const Color(0xFFFF6B35),
+        'badge': _pendingDealsCount > 0,
+        'badgeCount': _pendingDealsCount,
+        'onTap': () => _navigateTo(const AdminApprovalScreen()),
+      },
+      {
+        'title': 'Featured Business',
+        'subtitle': 'Manage featured listings',
+        'icon': Icons.star,
+        'color': const Color(0xFFFFD700),
+        'badge': false,
+        'badgeCount': 0,
+        'onTap': () => _navigateTo(const FeaturedBusinessScreen(isAdmin: true)),
       },
       {
         'title': 'Content Management',

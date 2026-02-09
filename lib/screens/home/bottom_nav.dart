@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../regional/regional_feed_screen.dart';
-import '../business/business_feed_screen.dart';
+import '../business_feed_screen.dart';
 import '../devotional/devotional_feed_screen.dart';
-import '../settings/settings_screen.dart';
+import '../settings_screen.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});

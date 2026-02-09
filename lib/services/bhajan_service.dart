@@ -473,6 +473,26 @@ class BhajanService {
 
   // ==================== MOCK DATA ====================
 
+  // ==================== AUDIO URL CONFIGURATION ====================
+  //
+  // TO ENABLE REAL BHAJAN PLAYBACK:
+  // 1. Upload bhajan audio files (.mp3/.m4a) to Supabase Storage bucket 'bhajans'
+  // 2. Get the public URL from Supabase:
+  //    https://<your-project>.supabase.co/storage/v1/object/public/bhajans/<filename>.mp3
+  // 3. Replace the placeholder URLs below with actual Supabase storage URLs
+  // 4. Or fetch URLs from your 'bhajans' table in the database
+  //
+  // Example Supabase URL format:
+  // 'https://xyzproject.supabase.co/storage/v1/object/public/bhajans/om-jai-jagdish.mp3'
+  // ===================================================================
+
+  // Your Supabase project URL for bhajan audio files
+  static String _getBhajanUrl(String bhajanId) {
+    // Uncomment the line below after uploading bhajan files to Supabase Storage bucket 'bhajans'
+    // return 'https://vwazacymtdhvynuglzph.supabase.co/storage/v1/object/public/bhajans/$bhajanId.mp3';
+    return ''; // Empty URL triggers demo mode in player
+  }
+
   List<Bhajan> _getMockBhajans() {
     final now = DateTime.now();
     final random = Random(42);
@@ -482,7 +502,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_1',
         title: 'Om Jai Jagdish Hare',
-        mediaUrl: 'https://example.com/bhajan1.mp3',
+        mediaUrl: _getBhajanUrl('om-jai-jagdish-hare'),
         type: BhajanType.audio,
         language: 'hindi',
         uploadedBy: 'user_1',
@@ -513,7 +533,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_2',
         title: 'Hanuman Chalisa',
-        mediaUrl: 'https://example.com/bhajan2.mp4',
+        mediaUrl: _getBhajanUrl('hanuman-chalisa'),
         type: BhajanType.video,
         language: 'hindi',
         uploadedBy: 'user_2',
@@ -546,7 +566,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_3',
         title: 'Suprabhatam - Morning Wake Up',
-        mediaUrl: 'https://example.com/bhajan3.mp3',
+        mediaUrl: _getBhajanUrl('suprabhatam'),
         type: BhajanType.audio,
         language: 'sanskrit',
         uploadedBy: 'user_3',
@@ -579,7 +599,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_4',
         title: 'Om Namah Shivaya - Evening Meditation',
-        mediaUrl: 'https://example.com/bhajan4.mp3',
+        mediaUrl: _getBhajanUrl('om-namah-shivaya'),
         type: BhajanType.audio,
         language: 'sanskrit',
         uploadedBy: 'user_4',
@@ -609,7 +629,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_5',
         title: 'Ganesh Aarti - Jai Ganesh Deva',
-        mediaUrl: 'https://example.com/bhajan5.mp4',
+        mediaUrl: _getBhajanUrl('ganesh-aarti'),
         type: BhajanType.video,
         language: 'hindi',
         uploadedBy: 'user_5',
@@ -640,7 +660,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_6',
         title: 'Shri Krishna Govind Hare Murari',
-        mediaUrl: 'https://example.com/bhajan6.mp3',
+        mediaUrl: _getBhajanUrl('krishna-bhajan'),
         type: BhajanType.audio,
         language: 'hindi',
         uploadedBy: 'user_6',
@@ -671,7 +691,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_7',
         title: 'Durga Chalisa - Navratri Special',
-        mediaUrl: 'https://example.com/bhajan7.mp4',
+        mediaUrl: _getBhajanUrl('durga-bhajan'),
         type: BhajanType.video,
         language: 'hindi',
         uploadedBy: 'user_7',
@@ -703,7 +723,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_8',
         title: 'Diwali Lakshmi Puja Mantra',
-        mediaUrl: 'https://example.com/bhajan8.mp3',
+        mediaUrl: _getBhajanUrl('gayatri-mantra'),
         type: BhajanType.audio,
         language: 'sanskrit',
         uploadedBy: 'user_8',
@@ -735,7 +755,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_9',
         title: 'Hare Krishna Maha Mantra - ISKCON',
-        mediaUrl: 'https://example.com/bhajan9.mp4',
+        mediaUrl: _getBhajanUrl('ram-bhajan'),
         type: BhajanType.video,
         language: 'sanskrit',
         uploadedBy: 'user_9',
@@ -767,7 +787,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_10',
         title: 'Gayatri Mantra - 108 Times',
-        mediaUrl: 'https://example.com/bhajan10.mp3',
+        mediaUrl: _getBhajanUrl('gayatri-mantra'),
         type: BhajanType.audio,
         language: 'sanskrit',
         uploadedBy: 'user_10',
@@ -800,7 +820,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_11',
         title: 'Surya Namaskar Mantra',
-        mediaUrl: 'https://example.com/bhajan11.mp4',
+        mediaUrl: _getBhajanUrl('surya-namaskar'),
         type: BhajanType.video,
         language: 'sanskrit',
         uploadedBy: 'user_11',
@@ -831,7 +851,7 @@ class BhajanService {
       Bhajan(
         id: 'bhajan_12',
         title: 'Vishnu Sahasranamam',
-        mediaUrl: 'https://example.com/bhajan12.mp3',
+        mediaUrl: _getBhajanUrl('vishnu-sahasranamam'),
         type: BhajanType.audio,
         language: 'sanskrit',
         uploadedBy: 'user_12',

@@ -66,6 +66,7 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
     'Tirupati': {'lat': 13.6288, 'lng': 79.4192},
     'Nellore': {'lat': 14.4426, 'lng': 79.9865},
     'Kochi': {'lat': 9.9312, 'lng': 76.2673},
+    'Kakkanad': {'lat': 10.0055, 'lng': 76.3484},
     'Thiruvananthapuram': {'lat': 8.5241, 'lng': 76.9366},
     'Kozhikode': {'lat': 11.2588, 'lng': 75.7804},
     'Thrissur': {'lat': 10.5276, 'lng': 76.2144},
@@ -727,33 +728,103 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
     setState(() => _isAutoDetecting = true);
 
     try {
-      // Use new LocationService for more accurate detection
+      print('🔍 Starting auto-detection...');
+      // Check permissions first
       final locationService = LocationService();
+      final hasPermission = await locationService.checkLocationPermission();
+
+      if (!hasPermission) {
+        print('⚠️ Location permission denied');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission required for auto-detection'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        setState(() => _isAutoDetecting = false);
+        return;
+      }
+
+      print('✅ Permission granted, getting location...');
       final locationData = await locationService.autoDetectLocation();
 
       if (locationData != null) {
+        print('🎯 Location detected:');
+        print('  State: ${locationData.state}');
+        print('  District: ${locationData.district}');
+        print('  City: ${locationData.city}');
+        print('  Village: ${locationData.village}');
+
         setState(() {
           _selectedState = locationData.state;
-          _selectedCity = locationData.district.isNotEmpty
-              ? locationData.district
-              : locationData.city;
-          _selectedVillage =
-              locationData.village.isNotEmpty ? locationData.village : null;
-          _detectedRegion = locationData.displayString;
+
+          // Use city if available, otherwise use district
+          _selectedCity = locationData.city.isNotEmpty
+              ? locationData.city
+              : (locationData.district.isNotEmpty
+                  ? locationData.district
+                  : null);
+
+          // Use village/locality if it's different from city
+          if (locationData.village.isNotEmpty &&
+              locationData.village != locationData.city) {
+            _selectedVillage = locationData.village;
+          } else {
+            _selectedVillage = null;
+          }
+
+          // For display, show the most specific location
+          if (_selectedVillage != null) {
+            _detectedRegion = '$_selectedVillage, $_selectedCity';
+          } else if (_selectedCity != null) {
+            _detectedRegion = '$_selectedCity, ${locationData.state}';
+          } else {
+            _detectedRegion = locationData.state;
+          }
         });
-        print('✅ Auto-detected location: ${locationData.displayString}');
+
+        print('✅ Auto-detected location set to: $_detectedRegion');
+        print(
+            '   State: $_selectedState, City: $_selectedCity, Village: $_selectedVillage');
       } else {
+        print('⚠️ LocationService returned null, trying fallback...');
         // Fallback to RegionService
-        final regionData = await RegionService.autoDetectRegion();
-        setState(() {
-          _selectedState = regionData['state'];
-          _selectedCity = regionData['city'];
-          _detectedRegion = regionData['region'];
-        });
+        try {
+          final regionData = await RegionService.autoDetectRegion();
+          setState(() {
+            _selectedState = regionData['state'];
+            _selectedCity = regionData['city'];
+            _detectedRegion = regionData['region'];
+          });
+          print('✅ Fallback detection successful: $regionData');
+        } catch (fallbackError) {
+          print('❌ Fallback also failed: $fallbackError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Could not auto-detect location. Please select manually.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
-      print('Error auto-detecting region: $e');
-      // Fallback to manual selection
+      print('❌ Error auto-detecting region: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Location detection failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
       setState(() => _isAutoDetecting = false);
     }
@@ -959,6 +1030,59 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                         ),
                         const SizedBox(height: 24),
                       ],
+
+                      // Auto-detect button - Always show this prominently
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _isAutoDetecting ? null : _autoDetectRegion,
+                          icon: _isAutoDetecting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location),
+                          label: Text(
+                            _isAutoDetecting
+                                ? 'Detecting location...'
+                                : '📍 Auto-Detect My Location',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Divider with "Or select manually"
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.grey.shade300)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'Or select manually',
+                              style: TextStyle(color: Colors.grey.shade600),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: Colors.grey.shade300)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
 
                       // Edit Mode - Show dropdowns
                       if (_isEditMode || _selectedState == null) ...[

@@ -169,5 +169,18 @@
   "volunteer": "स्वयंसेवक",
   "viewMore": "और देखें",
   "upvote": "अपवोट",
-  "downvote": "डाउनवोट"
+  "downvote": "डाउनवोट",
+
+  "featuredBusinesses": "फीचर्ड बिजनेस",
+  "explore": "खोजें",
+  "visitStore": "स्टोर पर जाएं",
+  "verified": "सत्यापित",
+  "sponsored": "विज्ञापन",
+  "ad": "विज्ञापन",
+  "map": "मानचित्र",
+  "bookNow": "अभी बुक करें",
+  "orderNow": "अभी आर्डर करें",
+  "callNow": "अभी कॉल करें",
+  "viewMenu": "मेन्यू देखें",
+  "bookAppointment": "अपॉइंटमेंट बुक करें"
 }

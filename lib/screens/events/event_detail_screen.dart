@@ -570,12 +570,25 @@ class EventDetailScreen extends StatelessWidget {
   }
 
   void _openMaps() async {
+    Uri uri;
+
+    // Use geo: URI with coordinates + event title only as label
     if (event.latitude != null && event.longitude != null) {
-      final url =
-          'https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}';
-      if (await canLaunchUrl(Uri.parse(url))) {
-        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-      }
+      final label = Uri.encodeComponent(event.title);
+      uri = Uri.parse(
+        'geo:${event.latitude},${event.longitude}?q=${event.latitude},${event.longitude}($label)',
+      );
+    } else if (event.locationName.isNotEmpty) {
+      final searchQuery =
+          Uri.encodeComponent('${event.title}, ${event.locationName}');
+      uri = Uri.parse('geo:0,0?q=$searchQuery');
+    } else {
+      final searchQuery = Uri.encodeComponent(event.title);
+      uri = Uri.parse('geo:0,0?q=$searchQuery');
+    }
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 

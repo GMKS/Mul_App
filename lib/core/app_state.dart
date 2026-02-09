@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/location_service.dart';
 
 /// Centralized app state manager - Single source of truth for:
 /// - City/Region selection
@@ -88,9 +89,10 @@ class AppState extends ChangeNotifier {
       _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
       _darkMode = prefs.getBool('dark_mode') ?? false;
 
-      // Apply defaults if no region set
+      // Auto-detect location if no region set
       if (_selectedCity == null || _selectedState == null) {
-        await _applyDefaultRegion(prefs);
+        // Try to auto-detect location first
+        await _tryAutoDetectLocation(prefs);
       }
 
       _isInitialized = true;
@@ -110,6 +112,84 @@ class AppState extends ChangeNotifier {
     await prefs.setString('user_city', defaultCity);
     await prefs.setString('user_state', defaultState);
     await prefs.setString('user_region', defaultRegion);
+  }
+
+  /// Try to auto-detect location, fallback to defaults if it fails
+  Future<void> _tryAutoDetectLocation(SharedPreferences prefs) async {
+    try {
+      final locationService = LocationService();
+      final hasPermission = await locationService.checkLocationPermission();
+
+      if (hasPermission) {
+        final locationData = await locationService.autoDetectLocation();
+
+        if (locationData != null && locationData.state.isNotEmpty) {
+          _selectedState = locationData.state;
+          _selectedCity = locationData.city.isNotEmpty
+              ? locationData.city
+              : (locationData.district.isNotEmpty
+                  ? locationData.district
+                  : defaultCity);
+          _selectedVillage = (locationData.village.isNotEmpty &&
+                  locationData.village != locationData.city)
+              ? locationData.village
+              : null;
+          _selectedRegion = _getRegionFromState(locationData.state);
+          _latitude = locationData.latitude;
+          _longitude = locationData.longitude;
+
+          // Save to prefs
+          await prefs.setString('user_city', _selectedCity!);
+          await prefs.setString('user_state', _selectedState!);
+          if (_selectedRegion != null)
+            await prefs.setString('user_region', _selectedRegion!);
+          if (_selectedVillage != null)
+            await prefs.setString('user_village', _selectedVillage!);
+          if (_latitude != null)
+            await prefs.setDouble('user_latitude', _latitude!);
+          if (_longitude != null)
+            await prefs.setDouble('user_longitude', _longitude!);
+
+          return; // Successfully auto-detected
+        }
+      }
+    } catch (e) {
+      // Auto-detection failed, use defaults
+    }
+
+    // Fallback to defaults
+    await _applyDefaultRegion(prefs);
+  }
+
+  /// Get region from state name
+  String _getRegionFromState(String state) {
+    const stateToRegion = {
+      'Delhi': 'North',
+      'Uttar Pradesh': 'North',
+      'Punjab': 'North',
+      'Haryana': 'North',
+      'Rajasthan': 'North',
+      'Himachal Pradesh': 'North',
+      'Uttarakhand': 'North',
+      'Jammu and Kashmir': 'North',
+      'Tamil Nadu': 'South',
+      'Karnataka': 'South',
+      'Kerala': 'South',
+      'Andhra Pradesh': 'South',
+      'Telangana': 'South',
+      'West Bengal': 'East',
+      'Bihar': 'East',
+      'Jharkhand': 'East',
+      'Odisha': 'East',
+      'Maharashtra': 'West',
+      'Gujarat': 'West',
+      'Goa': 'West',
+      'Madhya Pradesh': 'Central',
+      'Chhattisgarh': 'Central',
+      'Assam': 'Northeast',
+      'Meghalaya': 'Northeast',
+    };
+    return stateToRegion[state] ?? defaultRegion;
   }
 
   /// Update selected city and persist

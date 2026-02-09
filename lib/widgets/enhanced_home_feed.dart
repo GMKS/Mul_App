@@ -7,15 +7,25 @@ import 'quote_of_the_day_widget.dart';
 import 'aqi_widget.dart';
 import 'local_deals_widget.dart';
 import 'business_teasers_carousel.dart';
-import 'gamified_streaks_widget.dart';
+import 'daily_triple_puzzle_widget.dart';
 import 'quick_actions_widget.dart';
 import 'skeleton_loaders.dart';
+import 'gamified_streaks_widget.dart';
 import '../screens/business_feed_screen.dart';
 import '../screens/devotional/devotional_feed_screen.dart';
+import '../screens/emergency/emergency_services_screen.dart';
 import '../screens/temple/temple_live_screen.dart';
 import '../screens/bhajan/daily_bhajan_screen.dart';
 import '../screens/news/local_news_screen.dart';
 import '../screens/health/health_tips_screen.dart';
+import '../screens/local_help_screen.dart';
+import '../screens/local_alerts_screen.dart';
+import '../screens/education/education_corner_screen.dart';
+import '../screens/shop/local_shop_screen.dart';
+import '../screens/feedback_suggestions_screen.dart';
+import '../screens/cab_services_screen.dart';
+import '../screens/jobs_screen.dart';
+import '../screens/home_services_screen.dart';
 import '../core/route_manager.dart';
 
 class EnhancedHomeFeed extends StatefulWidget {
@@ -74,7 +84,7 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
   /// Handle story tap navigation
   void _handleStoryTap(StoryItem story) {
     switch (story.userName) {
-      case 'Temple Live':
+      case 'Place of Worship':
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const TempleLiveScreen()),
@@ -90,12 +100,6 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const LocalNewsScreen()),
-        );
-        break;
-      case 'Business Deals':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const BusinessFeedScreen()),
         );
         break;
       case 'Health Tips':
@@ -142,8 +146,8 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
             ),
 
             // 2. Gamified Streaks (Compact)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: GamifiedStreaksWidget(compact: true),
             ),
 
@@ -175,17 +179,28 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
             const AQIWidget(),
 
             // 6. Featured Businesses Carousel
-            const BusinessTeasersCarousel(),
+            BusinessTeasersCarousel(
+              onViewAllTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BusinessFeedScreen(),
+                  ),
+                );
+              },
+            ),
 
             // 8. Local Deals & Discounts
             const LocalDealsWidget(),
 
             // 9. Support Local CTA
             SupportLocalCTAWidget(
-              onDonateTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('🙏 Opening donation options...')),
+              onLocalHelpTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LocalHelpScreen(),
+                  ),
                 );
               },
               onShopTap: () {
@@ -193,19 +208,16 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
                   const SnackBar(content: Text('🛒 Opening local shops...')),
                 );
               },
-              onBookTap: () {
+              onConnectTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                      content: Text('📅 Opening services to book...')),
+                      content: Text('🔗 Connect with local businesses...')),
                 );
               },
             ),
 
-            // 11. Gamified Streaks (Full Widget)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: GamifiedStreaksWidget(compact: false),
-            ),
+            // 11. Daily Triple Puzzle (Time-based puzzles for all ages)
+            const DailyTriplePuzzleWidget(),
 
             // 12. Category Navigation Cards
             _buildCategoryCards(),
@@ -221,25 +233,67 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
   Widget _buildCategoryCards() {
     final categories = [
       {
-        'title': 'Regional',
-        'subtitle': 'Local Services',
-        'icon': Icons.location_on,
+        'title': 'Cab Services',
+        'subtitle': 'Easy & Safe Rides',
+        'icon': Icons.local_taxi,
         'gradient': [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)],
         'index': 0,
       },
       {
-        'title': 'Business',
-        'subtitle': 'Opportunities',
-        'icon': Icons.business_center,
-        'gradient': [const Color(0xFF6C63FF), const Color(0xFF5A52E0)],
+        'title': 'Education Corner',
+        'subtitle': 'Learning & Development',
+        'icon': Icons.school,
+        'gradient': [const Color(0xFF1ABC9C), const Color(0xFF16A085)],
         'index': 1,
       },
       {
-        'title': 'Devotional',
-        'subtitle': 'Spiritual',
-        'icon': Icons.self_improvement,
-        'gradient': [const Color(0xFF9B59B6), const Color(0xFF8E44AD)],
+        'title': 'Emergency Services',
+        'subtitle': 'Safety & Help',
+        'icon': Icons.local_hospital,
+        'gradient': [const Color(0xFFE91E63), const Color(0xFFC2185B)],
         'index': 2,
+      },
+      {
+        'title': 'Feedback & Suggestions',
+        'subtitle': 'Share Your Ideas',
+        'icon': Icons.feedback,
+        'gradient': [const Color(0xFF00BCD4), const Color(0xFF0097A7)],
+        'index': 3,
+      },
+      {
+        'title': 'Home Services',
+        'subtitle': 'Professional Help at Home',
+        'icon': Icons.home_repair_service,
+        'gradient': [const Color(0xFF9C27B0), const Color(0xFF7B1FA2)],
+        'index': 4,
+      },
+      {
+        'title': 'Jobs & Opportunities',
+        'subtitle': 'Find Your Next Job',
+        'icon': Icons.work,
+        'gradient': [const Color(0xFF3498DB), const Color(0xFF2980B9)],
+        'index': 5,
+      },
+      {
+        'title': 'Local Alerts',
+        'subtitle': 'Stay informed about your area',
+        'icon': Icons.notifications_active,
+        'gradient': [const Color(0xFFFF9800), const Color(0xFFF57C00)],
+        'index': 6,
+      },
+      {
+        'title': 'Local Help',
+        'subtitle': 'Community Support',
+        'icon': Icons.people_alt,
+        'gradient': [const Color(0xFF4CAF50), const Color(0xFF388E3C)],
+        'index': 7,
+      },
+      {
+        'title': 'Shop Local',
+        'subtitle': 'Nearby shops for daily needs.',
+        'icon': Icons.shopping_bag,
+        'gradient': [const Color(0xFF673AB7), const Color(0xFF512DA8)],
+        'index': 8,
       },
     ];
 
@@ -285,22 +339,77 @@ class _EnhancedHomeFeedState extends State<EnhancedHomeFeed>
       onTap: () {
         // Navigate based on category index
         if (index == 0) {
-          // Regional category
-          Navigator.pushNamed(context, RouteManager.regionalFeed);
-        } else if (index == 1) {
-          // Business category - Navigate to Business Feed
+          // Cab Services - Navigate to Cab Services Screen
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const BusinessFeedScreen(),
+              builder: (context) => CabServicesScreen(
+                userCity: 'Hyderabad',
+              ),
+            ),
+          );
+        } else if (index == 1) {
+          // Education Corner - Navigate to Education Corner Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const EducationCornerScreen(),
             ),
           );
         } else if (index == 2) {
-          // Devotional category - Navigate to Devotional Feed
+          // Emergency Services - Navigate to Emergency Services Screen
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const DevotionalFeedScreen(),
+              builder: (context) => const EmergencyServicesScreen(),
+            ),
+          );
+        } else if (index == 3) {
+          // Feedback & Suggestions - Navigate to Feedback Suggestions Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FeedbackSuggestionsScreen(),
+            ),
+          );
+        } else if (index == 4) {
+          // Home Services - Navigate to Home Services Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HomeServicesScreen(),
+            ),
+          );
+        } else if (index == 5) {
+          // Jobs & Opportunities - Navigate to Jobs Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const JobsScreen(),
+            ),
+          );
+        } else if (index == 6) {
+          // Local Alerts - Navigate to Local Alerts Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LocalAlertsScreen(),
+            ),
+          );
+        } else if (index == 7) {
+          // Local Help - Navigate to Local Help Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LocalHelpScreen(),
+            ),
+          );
+        } else if (index == 8) {
+          // Shop Local - Navigate to Local Shop Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LocalShopScreen(),
             ),
           );
         } else {

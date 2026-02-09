@@ -23,6 +23,7 @@ import 'screens/region_selection_screen.dart';
 import 'screens/language_selection_screen.dart';
 import 'screens/local_alerts_screen.dart';
 import 'screens/cab_services_screen.dart';
+import 'screens/local_deals_screen.dart';
 import 'features/regional/regional.dart';
 import 'theme/app_theme.dart';
 
@@ -239,6 +240,16 @@ class MyApp extends StatelessWidget {
 
       case RouteManager.regionalFeed:
         return _buildRoute(settings, const RegionalFeedScreen());
+
+      case RouteManager.localDeals:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          settings,
+          LocalDealsScreen(
+            city: args?['city'] as String?,
+            initialCategory: args?['category'] as String?,
+          ),
+        );
 
       default:
         return null;

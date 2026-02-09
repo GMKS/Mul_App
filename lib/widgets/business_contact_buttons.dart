@@ -9,20 +9,32 @@ class BusinessContactButtons extends StatelessWidget {
   final String phoneNumber;
   final String whatsappNumber;
   final String businessName;
+  final String? businessAddress;
+  final double? latitude;
+  final double? longitude;
+  final String? city;
   final Function()? onCallPressed;
   final Function()? onWhatsappPressed;
+  final Function()? onDirectionsPressed;
   final bool showLabels;
   final bool isCompact;
+  final bool showDirections;
 
   const BusinessContactButtons({
     super.key,
     required this.phoneNumber,
     required this.whatsappNumber,
     required this.businessName,
+    this.businessAddress,
+    this.latitude,
+    this.longitude,
+    this.city,
     this.onCallPressed,
     this.onWhatsappPressed,
+    this.onDirectionsPressed,
     this.showLabels = true,
     this.isCompact = false,
+    this.showDirections = true,
   });
 
   Future<void> _makeCall(BuildContext context) async {
@@ -66,6 +78,39 @@ class BusinessContactButtons extends StatelessWidget {
     }
   }
 
+  Future<void> _openDirections(BuildContext context) async {
+    HapticFeedback.mediumImpact();
+    onDirectionsPressed?.call();
+
+    Uri uri;
+
+    // Use geo: URI with coordinates + business name only as label
+    if (latitude != null && longitude != null) {
+      final label = Uri.encodeComponent(businessName);
+      uri = Uri.parse(
+        'geo:$latitude,$longitude?q=$latitude,$longitude($label)',
+      );
+    } else if (businessAddress != null && businessAddress!.isNotEmpty) {
+      final searchQuery = Uri.encodeComponent(
+          '$businessName, $businessAddress${city != null ? ', $city' : ''}');
+      uri = Uri.parse('geo:0,0?q=$searchQuery');
+    } else {
+      final searchQuery =
+          Uri.encodeComponent('$businessName${city != null ? ', $city' : ''}');
+      uri = Uri.parse('geo:0,0?q=$searchQuery');
+    }
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        _showError(context, 'Could not open maps. Please install Google Maps.');
+      }
+    } catch (e) {
+      _showError(context, 'Error opening maps: $e');
+    }
+  }
+
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -82,6 +127,15 @@ class BusinessContactButtons extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (showDirections) ...[
+            _buildCompactButton(
+              context,
+              icon: Icons.directions,
+              color: Colors.orange,
+              onTap: () => _openDirections(context),
+            ),
+            const SizedBox(width: 8),
+          ],
           _buildCompactButton(
             context,
             icon: Icons.call,
@@ -101,6 +155,17 @@ class BusinessContactButtons extends StatelessWidget {
 
     return Row(
       children: [
+        if (showDirections)
+          Expanded(
+            child: _buildButton(
+              context,
+              icon: Icons.directions,
+              label: 'Directions',
+              color: Colors.orange,
+              onTap: () => _openDirections(context),
+            ),
+          ),
+        if (showDirections) const SizedBox(width: 12),
         Expanded(
           child: _buildButton(
             context,
@@ -189,16 +254,28 @@ class BusinessFloatingButtons extends StatelessWidget {
   final String phoneNumber;
   final String whatsappNumber;
   final String businessName;
+  final String? businessAddress;
+  final double? latitude;
+  final double? longitude;
+  final String? city;
   final Function()? onCallPressed;
   final Function()? onWhatsappPressed;
+  final Function()? onDirectionsPressed;
+  final bool showDirections;
 
   const BusinessFloatingButtons({
     super.key,
     required this.phoneNumber,
     required this.whatsappNumber,
     required this.businessName,
+    this.businessAddress,
+    this.latitude,
+    this.longitude,
+    this.city,
     this.onCallPressed,
     this.onWhatsappPressed,
+    this.onDirectionsPressed,
+    this.showDirections = true,
   });
 
   Future<void> _makeCall(BuildContext context) async {
@@ -237,11 +314,58 @@ class BusinessFloatingButtons extends StatelessWidget {
     }
   }
 
+  Future<void> _openDirections(BuildContext context) async {
+    HapticFeedback.mediumImpact();
+    onDirectionsPressed?.call();
+
+    String mapsUrl;
+
+    // Priority 1: Use GPS coordinates if available
+    if (latitude != null && longitude != null) {
+      final query = Uri.encodeComponent(businessName);
+      mapsUrl =
+          'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude&destination_place_id=$query';
+    }
+    // Priority 2: Use business address if available
+    else if (businessAddress != null && businessAddress!.isNotEmpty) {
+      final query = Uri.encodeComponent(
+          '$businessName, $businessAddress${city != null ? ', $city' : ''}');
+      mapsUrl = 'https://www.google.com/maps/search/?api=1&query=$query';
+    }
+    // Fallback: Search by business name
+    else {
+      final query =
+          Uri.encodeComponent('$businessName${city != null ? ', $city' : ''}');
+      mapsUrl = 'https://www.google.com/maps/search/?api=1&query=$query';
+    }
+
+    final uri = Uri.parse(mapsUrl);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (showDirections) ...[
+          // Directions button
+          _buildFloatingButton(
+            context,
+            icon: Icons.directions,
+            label: 'Directions',
+            color: Colors.orange,
+            onTap: () => _openDirections(context),
+          ),
+          const SizedBox(height: 12),
+        ],
         // Call button
         _buildFloatingButton(
           context,

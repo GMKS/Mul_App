@@ -1,0 +1,1588 @@
+/// Daily Puzzle Screen
+/// Full puzzle gameplay with time-based puzzles for all age groups
+/// - Morning (6AM-12PM): Elders - Sudoku, Logic, Memory, Crossword
+/// - Afternoon (12PM-5PM): Women - Word Search, Picture, Trivia
+/// - Evening (5PM-6AM): Kids - Jigsaw, Math, Memory Match
+
+import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:math';
+import '../../widgets/daily_triple_puzzle_widget.dart';
+
+class DailyPuzzleScreen extends StatefulWidget {
+  final PuzzleSlot? initialSlot;
+
+  const DailyPuzzleScreen({super.key, this.initialSlot});
+
+  @override
+  State<DailyPuzzleScreen> createState() => _DailyPuzzleScreenState();
+}
+
+class _DailyPuzzleScreenState extends State<DailyPuzzleScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late PuzzleSlot _currentSlot;
+  late Timer _timer;
+  Duration _timeRemaining = Duration.zero;
+
+  // Game state
+  int _score = 0;
+  int _streak = 0;
+  int _coins = 0;
+  bool _puzzleSolved = false;
+  bool _showReward = false;
+
+  // Current puzzle data
+  late PuzzleData _currentPuzzle;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _currentSlot = widget.initialSlot ?? _getCurrentSlot();
+    _tabController.index = _currentSlot.index;
+    _generateNewPuzzle();
+    _updateTimer();
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _updateTimer();
+    });
+
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {
+          _currentSlot = PuzzleSlot.values[_tabController.index];
+          _generateNewPuzzle();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _timer.cancel();
+    super.dispose();
+  }
+
+  PuzzleSlot _getCurrentSlot() {
+    final hour = DateTime.now().hour;
+    if (hour >= 6 && hour < 12) return PuzzleSlot.morning;
+    if (hour >= 12 && hour < 17) return PuzzleSlot.afternoon;
+    return PuzzleSlot.evening;
+  }
+
+  void _updateTimer() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    DateTime nextSlotTime;
+
+    if (hour >= 6 && hour < 12) {
+      nextSlotTime = DateTime(now.year, now.month, now.day, 12, 0, 1);
+    } else if (hour >= 12 && hour < 17) {
+      nextSlotTime = DateTime(now.year, now.month, now.day, 17, 0, 0);
+    } else if (hour >= 17) {
+      nextSlotTime = DateTime(now.year, now.month, now.day + 1, 6, 0, 0);
+    } else {
+      nextSlotTime = DateTime(now.year, now.month, now.day, 6, 0, 0);
+    }
+
+    setState(() {
+      _timeRemaining = nextSlotTime.difference(now);
+    });
+  }
+
+  void _generateNewPuzzle() {
+    setState(() {
+      _currentPuzzle = PuzzleData.generate(_currentSlot);
+      _puzzleSolved = false;
+      _showReward = false;
+    });
+  }
+
+  void _onPuzzleSolved() {
+    setState(() {
+      _puzzleSolved = true;
+      _score += _currentPuzzle.points;
+      _streak++;
+      _coins += _currentSlot.rewardCoins;
+      _showReward = true;
+    });
+
+    // Show reward dialog
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _showRewardDialog();
+    });
+  }
+
+  void _showRewardDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '🎉',
+              style: TextStyle(fontSize: 60),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Congratulations!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You solved the ${_currentPuzzle.type}!',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Column(
+                    children: [
+                      const Text('🏆', style: TextStyle(fontSize: 28)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '+${_currentPuzzle.points}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const Text('Points', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                  Container(
+                    width: 1,
+                    height: 50,
+                    color: Colors.grey[300],
+                  ),
+                  Column(
+                    children: [
+                      const Text('💰', style: TextStyle(fontSize: 28)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '+${_currentSlot.rewardCoins}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const Text('Coins', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                  Container(
+                    width: 1,
+                    height: 50,
+                    color: Colors.grey[300],
+                  ),
+                  Column(
+                    children: [
+                      const Text('🔥', style: TextStyle(fontSize: 28)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$_streak',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const Text('Streak', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Done'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _generateNewPuzzle();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _currentSlot.gradientColors[0],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Play Again'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              _currentSlot.gradientColors[0],
+              _currentSlot.gradientColors[1].withOpacity(0.8),
+              Colors.white,
+            ],
+            stops: const [0.0, 0.3, 0.5],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // App Bar
+              _buildAppBar(),
+
+              // Tabs
+              _buildTabs(),
+
+              // Stats Bar
+              _buildStatsBar(),
+
+              // Puzzle Content
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                    child: _buildPuzzleContent(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Daily Triple Puzzle',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Ends in ${_formatDuration(_timeRemaining)}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Leaderboard button
+          GestureDetector(
+            onTap: () => _showLeaderboard(),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.leaderboard,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Help button
+          GestureDetector(
+            onTap: () => _showHintDialog(),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.lightbulb_outline,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabs() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        indicatorPadding: const EdgeInsets.all(4),
+        labelColor: _currentSlot.gradientColors[0],
+        unselectedLabelColor: Colors.white,
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+        tabs: [
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(PuzzleSlot.morning.emoji),
+                const SizedBox(width: 4),
+                const Text('Elders'),
+              ],
+            ),
+          ),
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(PuzzleSlot.afternoon.emoji),
+                const SizedBox(width: 4),
+                const Text('Women'),
+              ],
+            ),
+          ),
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(PuzzleSlot.evening.emoji),
+                const SizedBox(width: 4),
+                const Text('Kids'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          _buildStatChip('🏆 $_score', 'Points'),
+          const SizedBox(width: 12),
+          _buildStatChip('💰 $_coins', 'Coins'),
+          const SizedBox(width: 12),
+          _buildStatChip('🔥 $_streak', 'Streak'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip(String value, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPuzzleContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Puzzle type header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _currentSlot.gradientColors[0].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _currentPuzzle.emoji,
+                  style: const TextStyle(fontSize: 28),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _currentPuzzle.type,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Difficulty: ${_currentPuzzle.difficulty}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '+${_currentPuzzle.points} pts',
+                  style: TextStyle(
+                    color: Colors.amber.shade800,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Puzzle question/instructions
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              _currentPuzzle.question,
+              style: const TextStyle(
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Interactive puzzle area
+          _buildInteractivePuzzle(),
+
+          const SizedBox(height: 24),
+
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _generateNewPuzzle,
+                  icon: const Icon(Icons.skip_next),
+                  label: const Text('Skip'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton.icon(
+                  onPressed: _puzzleSolved ? null : _checkAnswer,
+                  icon: const Icon(Icons.check_circle),
+                  label: Text(_puzzleSolved ? 'Solved!' : 'Submit Answer'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _currentSlot.gradientColors[0],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Today's leaderboard preview
+          _buildLeaderboardPreview(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInteractivePuzzle() {
+    // Different puzzle UIs based on type
+    switch (_currentPuzzle.puzzleType) {
+      case PuzzleType.multipleChoice:
+        return _buildMultipleChoicePuzzle();
+      case PuzzleType.wordScramble:
+        return _buildWordScramblePuzzle();
+      case PuzzleType.mathProblem:
+        return _buildMathPuzzle();
+      case PuzzleType.memoryMatch:
+        return _buildMemoryMatchPuzzle();
+      default:
+        return _buildMultipleChoicePuzzle();
+    }
+  }
+
+  Widget _buildMultipleChoicePuzzle() {
+    return Column(
+      children: _currentPuzzle.options.asMap().entries.map((entry) {
+        final index = entry.key;
+        final option = entry.value;
+        final isSelected = _currentPuzzle.selectedAnswer == index;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _currentPuzzle.selectedAnswer = index;
+              });
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? _currentSlot.gradientColors[0].withOpacity(0.1)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? _currentSlot.gradientColors[0]
+                      : Colors.grey.shade300,
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? _currentSlot.gradientColors[0]
+                          : Colors.grey.shade200,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        String.fromCharCode(65 + index), // A, B, C, D
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.grey[600],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      option,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: isSelected
+                            ? _currentSlot.gradientColors[0]
+                            : Colors.black87,
+                      ),
+                    ),
+                  ),
+                  if (isSelected)
+                    Icon(
+                      Icons.check_circle,
+                      color: _currentSlot.gradientColors[0],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildWordScramblePuzzle() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: _currentSlot.gradientColors[0].withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            _currentPuzzle.scrambledWord ?? '',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 8,
+              color: _currentSlot.gradientColors[0],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        TextField(
+          onChanged: (value) {
+            setState(() {
+              _currentPuzzle.userInput = value;
+            });
+          },
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 20, letterSpacing: 4),
+          decoration: InputDecoration(
+            hintText: 'Type your answer',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: _currentSlot.gradientColors[0],
+                width: 2,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMathPuzzle() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: _currentSlot.gradientColors[0].withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            _currentPuzzle.mathExpression ?? '5 + 3 = ?',
+            style: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              color: _currentSlot.gradientColors[0],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
+          children: _currentPuzzle.options.asMap().entries.map((entry) {
+            final index = entry.key;
+            final option = entry.value;
+            final isSelected = _currentPuzzle.selectedAnswer == index;
+
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _currentPuzzle.selectedAnswer = index;
+                });
+              },
+              child: Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? _currentSlot.gradientColors[0]
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? _currentSlot.gradientColors[0]
+                        : Colors.grey.shade300,
+                    width: 2,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color:
+                                _currentSlot.gradientColors[0].withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          )
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    option,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMemoryMatchPuzzle() {
+    // Simple memory match with emojis
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: 12,
+      itemBuilder: (context, index) {
+        final isRevealed = _currentPuzzle.revealedCards.contains(index);
+        final emoji = _currentPuzzle.memoryCards[index];
+
+        return GestureDetector(
+          onTap: () {
+            if (!isRevealed && _currentPuzzle.revealedCards.length < 2) {
+              setState(() {
+                _currentPuzzle.revealedCards.add(index);
+              });
+              // Check for match after 2 cards revealed
+              if (_currentPuzzle.revealedCards.length == 2) {
+                Future.delayed(const Duration(milliseconds: 800), () {
+                  _checkMemoryMatch();
+                });
+              }
+            }
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            decoration: BoxDecoration(
+              color: isRevealed
+                  ? _currentSlot.gradientColors[0].withOpacity(0.1)
+                  : _currentSlot.gradientColors[0],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                isRevealed ? emoji : '❓',
+                style: const TextStyle(fontSize: 28),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _checkMemoryMatch() {
+    // Simplified memory match logic
+    setState(() {
+      _currentPuzzle.revealedCards.clear();
+    });
+  }
+
+  void _checkAnswer() {
+    bool isCorrect = false;
+
+    switch (_currentPuzzle.puzzleType) {
+      case PuzzleType.multipleChoice:
+      case PuzzleType.mathProblem:
+        isCorrect =
+            _currentPuzzle.selectedAnswer == _currentPuzzle.correctAnswer;
+        break;
+      case PuzzleType.wordScramble:
+        isCorrect = _currentPuzzle.userInput?.toLowerCase().trim() ==
+            _currentPuzzle.correctWord?.toLowerCase();
+        break;
+      default:
+        isCorrect =
+            _currentPuzzle.selectedAnswer == _currentPuzzle.correctAnswer;
+    }
+
+    if (isCorrect) {
+      _onPuzzleSolved();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.close, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Wrong answer! Try again'),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildLeaderboardPreview() {
+    final leaders = [
+      {'name': 'Ramesh K.', 'score': 1250, 'rank': 1},
+      {'name': 'Priya S.', 'score': 1180, 'rank': 2},
+      {'name': 'Suresh M.', 'score': 1050, 'rank': 3},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                '🏆 Today\'s Leaders',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: _showLeaderboard,
+                child: Text(
+                  'View All',
+                  style: TextStyle(
+                    color: _currentSlot.gradientColors[0],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...leaders.map((leader) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: leader['rank'] == 1
+                          ? Colors.amber
+                          : leader['rank'] == 2
+                              ? Colors.grey.shade400
+                              : Colors.orange.shade300,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${leader['rank']}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      leader['name'] as String,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  Text(
+                    '${leader['score']} pts',
+                    style: TextStyle(
+                      color: _currentSlot.gradientColors[0],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  void _showLeaderboard() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                '🏆 ${_currentSlot.title} Leaderboard',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: 20,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemBuilder: (context, index) {
+                  final rank = index + 1;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: rank <= 3
+                          ? _currentSlot.gradientColors[0].withOpacity(0.1)
+                          : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: rank <= 3
+                          ? Border.all(
+                              color: _currentSlot.gradientColors[0]
+                                  .withOpacity(0.3),
+                            )
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: rank == 1
+                                ? Colors.amber
+                                : rank == 2
+                                    ? Colors.grey.shade400
+                                    : rank == 3
+                                        ? Colors.orange.shade300
+                                        : Colors.grey.shade200,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: rank <= 3
+                                ? Text(
+                                    rank == 1
+                                        ? '🥇'
+                                        : rank == 2
+                                            ? '🥈'
+                                            : '🥉',
+                                    style: const TextStyle(fontSize: 18),
+                                  )
+                                : Text(
+                                    '$rank',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Player ${rank}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                '${10 - (index % 5)} puzzles solved',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${1500 - (index * 50)} pts',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: _currentSlot.gradientColors[0],
+                              ),
+                            ),
+                            Text(
+                              '🔥 ${10 - (index % 7)} streak',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showHintDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Text('💡', style: TextStyle(fontSize: 28)),
+            SizedBox(width: 8),
+            Text('Need a Hint?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Watch a short video ad to get a hint for this puzzle!',
+              style: TextStyle(fontSize: 15),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.play_circle, color: Colors.amber),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Watch Ad = Free Hint',
+                    style: TextStyle(
+                      color: Colors.amber.shade800,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Show hint after "watching ad"
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Hint: ${_currentPuzzle.hint}'),
+                  backgroundColor: Colors.amber,
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber,
+            ),
+            child: const Text('Watch Ad'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+}
+
+// Puzzle Types
+enum PuzzleType {
+  multipleChoice,
+  wordScramble,
+  mathProblem,
+  memoryMatch,
+}
+
+// Puzzle Data Model
+class PuzzleData {
+  final String type;
+  final String emoji;
+  final String question;
+  final String difficulty;
+  final int points;
+  final List<String> options;
+  final int correctAnswer;
+  final String hint;
+  final PuzzleType puzzleType;
+
+  // For different puzzle types
+  String? scrambledWord;
+  String? correctWord;
+  String? mathExpression;
+  String? userInput;
+  int? selectedAnswer;
+  List<int> revealedCards = [];
+  List<String> memoryCards = [];
+
+  PuzzleData({
+    required this.type,
+    required this.emoji,
+    required this.question,
+    required this.difficulty,
+    required this.points,
+    required this.options,
+    required this.correctAnswer,
+    required this.hint,
+    required this.puzzleType,
+    this.scrambledWord,
+    this.correctWord,
+    this.mathExpression,
+  });
+
+  static PuzzleData generate(PuzzleSlot slot) {
+    // Use date-based seed so questions change daily but are consistent within a day
+    final now = DateTime.now();
+    final dateSeed = now.year * 10000 + now.month * 100 + now.day;
+    final random = Random(dateSeed + slot.index);
+
+    switch (slot) {
+      case PuzzleSlot.morning:
+        // Elder's puzzles - Logic, Trivia, Memory (expanded for daily variety)
+        final puzzles = [
+          PuzzleData(
+            type: 'Logic Puzzle',
+            emoji: '🧠',
+            question:
+                'If all roses are flowers, and some flowers fade quickly, which statement must be true?',
+            difficulty: 'Medium',
+            points: 50,
+            options: [
+              'All roses fade quickly',
+              'Some roses may fade quickly',
+              'No roses fade quickly',
+              'Roses are not flowers',
+            ],
+            correctAnswer: 1,
+            hint: 'Think about the relationship between "all" and "some"',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'General Knowledge',
+            emoji: '📚',
+            question: 'Which Indian city is known as the "City of Pearls"?',
+            difficulty: 'Easy',
+            points: 30,
+            options: ['Mumbai', 'Hyderabad', 'Chennai', 'Jaipur'],
+            correctAnswer: 1,
+            hint: 'This city is also famous for Biryani',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Word Wisdom',
+            emoji: '📝',
+            question:
+                'What is the meaning of the Hindi proverb "Jaisa des vaisa bhes"?',
+            difficulty: 'Easy',
+            points: 30,
+            options: [
+              'Home is best',
+              'When in Rome, do as Romans do',
+              'Birds of a feather flock together',
+              'Time is money',
+            ],
+            correctAnswer: 1,
+            hint: 'It\'s about adapting to surroundings',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'History Quiz',
+            emoji: '🏛️',
+            question: 'Who was the first President of India?',
+            difficulty: 'Easy',
+            points: 30,
+            options: [
+              'Jawaharlal Nehru',
+              'Dr. Rajendra Prasad',
+              'Sardar Patel',
+              'B.R. Ambedkar'
+            ],
+            correctAnswer: 1,
+            hint: 'He served from 1950 to 1962',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Science Trivia',
+            emoji: '🔬',
+            question: 'Which planet is known as the Red Planet?',
+            difficulty: 'Easy',
+            points: 30,
+            options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
+            correctAnswer: 1,
+            hint: 'Named after the Roman god of war',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Logic Puzzle',
+            emoji: '🧩',
+            question:
+                'A bat and a ball cost ₹110. The bat costs ₹100 more than the ball. How much does the ball cost?',
+            difficulty: 'Medium',
+            points: 50,
+            options: ['₹10', '₹5', '₹15', '₹20'],
+            correctAnswer: 1,
+            hint: 'Let ball = x, then bat = x + 100',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Indian Culture',
+            emoji: '🪔',
+            question: 'Which festival is known as the Festival of Lights?',
+            difficulty: 'Easy',
+            points: 25,
+            options: ['Holi', 'Diwali', 'Navratri', 'Pongal'],
+            correctAnswer: 1,
+            hint: 'It celebrates the victory of light over darkness',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+        ];
+        return puzzles[random.nextInt(puzzles.length)];
+
+      case PuzzleSlot.afternoon:
+        // Women's puzzles - Word Search, Picture, Trivia (expanded for daily variety)
+        final puzzles = [
+          PuzzleData(
+            type: 'Word Scramble',
+            emoji: '🔤',
+            question: 'Unscramble this word related to cooking:',
+            difficulty: 'Medium',
+            points: 40,
+            options: [],
+            correctAnswer: 0,
+            hint: 'It\'s a common Indian spice',
+            puzzleType: PuzzleType.wordScramble,
+            scrambledWord: 'CMRIEU',
+            correctWord: 'CUMIN',
+          ),
+          PuzzleData(
+            type: 'Kitchen Trivia',
+            emoji: '👩‍🍳',
+            question: 'Which ingredient makes rotis soft and fluffy?',
+            difficulty: 'Easy',
+            points: 30,
+            options: ['Salt', 'Milk or yogurt', 'Sugar', 'Butter'],
+            correctAnswer: 1,
+            hint: 'It\'s a dairy product',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Fashion Quiz',
+            emoji: '👗',
+            question:
+                'Which fabric is traditionally used for making Banarasi sarees?',
+            difficulty: 'Medium',
+            points: 40,
+            options: ['Cotton', 'Silk', 'Polyester', 'Wool'],
+            correctAnswer: 1,
+            hint: 'It\'s a luxurious natural fabric',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Health Tips',
+            emoji: '🥗',
+            question: 'Which vitamin is found abundantly in citrus fruits?',
+            difficulty: 'Easy',
+            points: 30,
+            options: ['Vitamin A', 'Vitamin C', 'Vitamin D', 'Vitamin B12'],
+            correctAnswer: 1,
+            hint: 'It helps boost immunity',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Home Decor',
+            emoji: '🏡',
+            question:
+                'According to Vastu, which direction should the main door face ideally?',
+            difficulty: 'Medium',
+            points: 40,
+            options: ['South', 'North or East', 'West', 'Southwest'],
+            correctAnswer: 1,
+            hint: 'These directions bring positive energy',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Word Scramble',
+            emoji: '🔤',
+            question: 'Unscramble this kitchen item:',
+            difficulty: 'Medium',
+            points: 40,
+            options: [],
+            correctAnswer: 0,
+            hint: 'Used for rolling rotis',
+            puzzleType: PuzzleType.wordScramble,
+            scrambledWord: 'ELNAIB',
+            correctWord: 'BELAN',
+          ),
+          PuzzleData(
+            type: 'Beauty Tips',
+            emoji: '💄',
+            question: 'Which natural ingredient is known for skin brightening?',
+            difficulty: 'Easy',
+            points: 30,
+            options: ['Turmeric', 'Salt', 'Sugar', 'Pepper'],
+            correctAnswer: 0,
+            hint: 'It\'s yellow in color',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+        ];
+        return puzzles[random.nextInt(puzzles.length)];
+
+      case PuzzleSlot.evening:
+        // Kids' puzzles - Math, Fun, Memory (expanded for daily variety)
+        final puzzles = [
+          PuzzleData(
+            type: 'Math Fun',
+            emoji: '➕',
+            question: 'Solve this:',
+            difficulty: 'Easy',
+            points: 25,
+            options: ['12', '15', '18', '20'],
+            correctAnswer: 1,
+            hint: 'Add step by step',
+            puzzleType: PuzzleType.mathProblem,
+            mathExpression: '7 + 8 = ?',
+          ),
+          PuzzleData(
+            type: 'Animal Quiz',
+            emoji: '🦁',
+            question: 'Which animal is known as the "King of the Jungle"?',
+            difficulty: 'Easy',
+            points: 20,
+            options: ['Elephant', 'Lion', 'Tiger', 'Monkey'],
+            correctAnswer: 1,
+            hint: 'It has a big mane',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Color Math',
+            emoji: '🎨',
+            question: 'Solve this colorful math:',
+            difficulty: 'Easy',
+            points: 25,
+            options: ['10', '12', '14', '16'],
+            correctAnswer: 2,
+            hint: 'Count carefully!',
+            puzzleType: PuzzleType.mathProblem,
+            mathExpression: '🍎🍎🍎 + 🍎🍎 = ? (🍎 = 2)',
+          ),
+          PuzzleData(
+            type: 'Math Fun',
+            emoji: '➖',
+            question: 'Solve this subtraction:',
+            difficulty: 'Easy',
+            points: 25,
+            options: ['5', '7', '9', '11'],
+            correctAnswer: 1,
+            hint: 'Take away step by step',
+            puzzleType: PuzzleType.mathProblem,
+            mathExpression: '15 - 8 = ?',
+          ),
+          PuzzleData(
+            type: 'Space Quiz',
+            emoji: '🚀',
+            question: 'What is the largest planet in our solar system?',
+            difficulty: 'Easy',
+            points: 20,
+            options: ['Earth', 'Mars', 'Jupiter', 'Saturn'],
+            correctAnswer: 2,
+            hint: 'It has a big red spot',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Fruit Math',
+            emoji: '🍌',
+            question: 'Solve this fruity math:',
+            difficulty: 'Easy',
+            points: 25,
+            options: ['6', '8', '9', '12'],
+            correctAnswer: 2,
+            hint: 'Multiply carefully!',
+            puzzleType: PuzzleType.mathProblem,
+            mathExpression: '🍌🍌🍌 × 🍌🍌🍌 = ? (🍌 = 1)',
+          ),
+          PuzzleData(
+            type: 'Animal Sounds',
+            emoji: '🐄',
+            question: 'Which animal says "Moo"?',
+            difficulty: 'Easy',
+            points: 15,
+            options: ['Dog', 'Cat', 'Cow', 'Horse'],
+            correctAnswer: 2,
+            hint: 'It gives us milk',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+          PuzzleData(
+            type: 'Color Quiz',
+            emoji: '🌈',
+            question: 'How many colors are in a rainbow?',
+            difficulty: 'Easy',
+            points: 20,
+            options: ['5', '6', '7', '8'],
+            correctAnswer: 2,
+            hint: 'VIBGYOR',
+            puzzleType: PuzzleType.multipleChoice,
+          ),
+        ];
+        final puzzle = puzzles[random.nextInt(puzzles.length)];
+
+        // Add memory cards for memory match type
+        if (puzzle.puzzleType == PuzzleType.memoryMatch) {
+          final emojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍒'];
+          puzzle.memoryCards = [...emojis, ...emojis]..shuffle();
+        }
+
+        return puzzle;
+    }
+  }
+}

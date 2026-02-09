@@ -781,13 +781,26 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen>
   }
 
   void _openMaps() async {
+    Uri uri;
+
+    // Use geo: URI with coordinates + business name only as label
     if (widget.service.latitude != null && widget.service.longitude != null) {
-      final uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${widget.service.latitude},${widget.service.longitude}',
+      final label = Uri.encodeComponent(widget.service.businessName);
+      uri = Uri.parse(
+        'geo:${widget.service.latitude},${widget.service.longitude}?q=${widget.service.latitude},${widget.service.longitude}($label)',
       );
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+    } else if (widget.service.address != null &&
+        widget.service.address!.isNotEmpty) {
+      final searchQuery = Uri.encodeComponent(
+          '${widget.service.businessName}, ${widget.service.address}');
+      uri = Uri.parse('geo:0,0?q=$searchQuery');
+    } else {
+      final searchQuery = Uri.encodeComponent(widget.service.businessName);
+      uri = Uri.parse('geo:0,0?q=$searchQuery');
+    }
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 

@@ -14,6 +14,7 @@ import 'business_video_player_screen.dart';
 import 'business/business_analytics_advanced_screen.dart';
 import 'business/business_profile_enhanced_screen.dart';
 import 'business/submit_business_screen_enhanced.dart';
+import 'business/featured_business_screen.dart';
 
 class BusinessFeedScreen extends StatefulWidget {
   const BusinessFeedScreen({super.key});
@@ -199,6 +200,18 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.normal,
+            fontSize: 12,
+          ),
           tabs: const [
             Tab(icon: Icon(Icons.play_circle_outline), text: 'Videos'),
             Tab(icon: Icon(Icons.local_offer), text: 'Offers'),
@@ -222,18 +235,135 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const SubmitBusinessScreenEnhanced(),
-            ),
-          );
-        },
+        onPressed: () => _showAddBusinessOptions(),
         icon: const Icon(Icons.add_business),
         label: const Text('Add Business'),
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
+      ),
+    );
+  }
+
+  void _showAddBusinessOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Add Your Business',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Choose how you want to list your business',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Regular Business Listing
+            ListTile(
+              leading: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.business,
+                  color: Colors.blue.shade700,
+                  size: 28,
+                ),
+              ),
+              title: const Text(
+                'Regular Business Listing',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('Add your business to the directory'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SubmitBusinessScreenEnhanced(),
+                  ),
+                );
+              },
+            ),
+            const Divider(height: 1),
+
+            // Featured Business Listing
+            ListTile(
+              leading: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.amber, Colors.orange],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.star,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              title: const Text(
+                'Featured Business',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('Get premium visibility on home screen'),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'PREMIUM',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  ),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FeaturedBusinessScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -334,7 +464,30 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (_videos.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.video_library_outlined,
+                size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'No videos available',
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Business videos will appear here',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
+      padding: const EdgeInsets.only(top: 8, bottom: 80),
       itemCount: _videos.length,
       itemBuilder: (context, index) {
         final video = _videos[index];
@@ -603,8 +756,29 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (_offers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.local_offer_outlined, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'No offers available',
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Business offers will appear here',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 80),
       itemCount: _offers.length,
       itemBuilder: (context, index) {
         final offer = _offers[index];
@@ -872,7 +1046,7 @@ class _BusinessFeedScreenState extends State<BusinessFeedScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 80),
       itemCount: businesses.length,
       itemBuilder: (context, index) {
         return _buildBusinessCard(businesses[index]);

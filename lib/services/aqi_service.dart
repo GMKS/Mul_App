@@ -111,21 +111,35 @@ class AQIService {
       final regionData = await RegionService.getStoredRegion();
 
       // Priority: village > city > state > 'Delhi' (fallback)
-      // This ensures we show "Medchal" not "Secunderabad"
+      // This ensures we show "Medchal" not "Hyderabad"
       final village = regionData['village'] ?? '';
       final city = regionData['city'] ?? '';
       final state = regionData['state'] ?? '';
 
-      // Use the most specific location available (village first, then city, then state)
-      final displayLocation = village.isNotEmpty
-          ? village
-          : (city.isNotEmpty ? city : (state.isNotEmpty ? state : 'Delhi'));
+      print('🌍 DEBUG AQI Service - Getting AQI for:');
+      print('  Village: \"$village\"');
+      print('  City: \"$city\"');
+      print('  State: \"$state\"');
+
+      // Use the most specific location available
+      // CRITICAL: Check if village exists AND is not empty AND is not same as city
+      String displayLocation;
+      if (village.isNotEmpty && village.trim().isNotEmpty && village != city) {
+        displayLocation = village;
+        print('  ✅ Using VILLAGE: $displayLocation');
+      } else if (city.isNotEmpty && city.trim().isNotEmpty) {
+        displayLocation = city;
+        print('  ✅ Using CITY: $displayLocation');
+      } else if (state.isNotEmpty && state.trim().isNotEmpty) {
+        displayLocation = state;
+        print('  ✅ Using STATE: $displayLocation');
+      } else {
+        displayLocation = 'Delhi';
+        print('  ⚠️ Using FALLBACK: $displayLocation');
+      }
 
       final lat = regionData['latitude'];
       final lng = regionData['longitude'];
-
-      print('🌍 DEBUG AQI Service - Getting AQI for: $displayLocation');
-      print('  Village: $village, City: $city, State: $state');
       print('  Coordinates: lat=$lat, lng=$lng');
 
       // Always use mock data with the SELECTED location name
@@ -135,7 +149,7 @@ class AQIService {
 
       return aqiData;
     } catch (e) {
-      print('Error getting AQI: $e');
+      print('❌ Error getting AQI: $e');
       return _getMockAQI('Your City');
     }
   }

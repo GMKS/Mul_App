@@ -2,7 +2,8 @@
 /// Displays current AQI with color-coded indicator and health advice
 
 import 'package:flutter/material.dart';
-import '../../services/aqi_service.dart';
+import '../services/aqi_service.dart';
+import '../screens/region_selection_screen.dart';
 
 class AQIWidget extends StatefulWidget {
   final bool compact;
@@ -43,7 +44,7 @@ class _AQIWidgetState extends State<AQIWidget>
   @override
   void didUpdateWidget(AQIWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reload AQI data when widget is rebuilt
+    // Reload AQI data when widget is rebuilt to ensure fresh location data
     _loadAQI();
   }
 
@@ -249,17 +250,18 @@ class _AQIWidgetState extends State<AQIWidget>
                       children: [
                         Text(
                           '${_aqiData!.aqi}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: _getCircleTextColor(_aqiData!.aqi),
                           ),
                         ),
-                        const Text(
+                        Text(
                           'AQI',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.white70,
+                            color: _getCircleTextColor(_aqiData!.aqi)
+                                .withOpacity(0.8),
                           ),
                         ),
                       ],
@@ -284,7 +286,7 @@ class _AQIWidgetState extends State<AQIWidget>
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: color,
+                                  color: _getTextColor(color),
                                 ),
                               ),
                             ),
@@ -304,18 +306,56 @@ class _AQIWidgetState extends State<AQIWidget>
                             Icon(
                               Icons.location_on,
                               size: 14,
-                              color: Colors.grey[500],
+                              color: Colors.blue[700],
                             ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 _aqiData!.location,
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blue[700],
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            // Change location button
+                            InkWell(
+                              onTap: _changeLocation,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.blue[300]!,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.edit_location_alt,
+                                      size: 14,
+                                      color: Colors.blue[700],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Change',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.blue[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -453,5 +493,56 @@ class _AQIWidgetState extends State<AQIWidget>
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
+  }
+
+  /// Navigate to location change screen
+  Future<void> _changeLocation() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const RegionSelectionScreen(
+          isInitialSetup: false,
+        ),
+      ),
+    );
+
+    // Reload AQI data if location was changed
+    if (result == true && mounted) {
+      setState(() => _isLoading = true);
+      await _loadAQI();
+    }
+  }
+
+  /// Get appropriate text color for better contrast
+  /// Yellow and light colors get darker variants for readability
+  Color _getTextColor(Color baseColor) {
+    // For yellow (Moderate AQI) - use darker amber for better contrast
+    if (baseColor.value == 0xFFFFEB3B) {
+      return const Color(0xFFF57F17); // Dark amber - much better contrast
+    }
+    // For orange (Unhealthy for Sensitive) - darken slightly
+    if (baseColor.value == 0xFFFF9800) {
+      return const Color(0xFFE65100); // Dark orange
+    }
+    // For other colors, use the original color
+    return baseColor;
+  }
+
+  /// Get text color for AQI circle number
+  /// Use dark text on light backgrounds (yellow/orange/green)
+  /// Use white text on dark backgrounds (red/purple)
+  Color _getCircleTextColor(int aqi) {
+    if (aqi <= 50) {
+      // Good - green background - use dark text
+      return const Color(0xFF1B5E20); // Dark green
+    } else if (aqi <= 100) {
+      // Moderate - yellow background - use dark text for readability
+      return const Color(0xFF694F00); // Dark brown/yellow
+    } else if (aqi <= 150) {
+      // Unhealthy for Sensitive - orange background - use dark text
+      return const Color(0xFF4E2A00); // Very dark brown
+    } else {
+      // Unhealthy and above - red/purple/dark backgrounds - use white text
+      return Colors.white;
+    }
   }
 }

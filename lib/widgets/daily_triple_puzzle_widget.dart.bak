@@ -1,0 +1,522 @@
+/// Daily Triple Puzzle Widget
+/// Time-based puzzles for different age groups:
+/// - 6AM - 12PM: Elders (Logic, Sudoku, Memory)
+/// - 12:01PM - 6PM: Women (Word Search, Picture, Trivia)
+/// - 5PM - 12AM: Kids (Jigsaw, Math, Memory Match)
+
+import 'package:flutter/material.dart';
+import 'dart:async';
+import '../screens/puzzle/daily_puzzle_screen.dart';
+
+class DailyTriplePuzzleWidget extends StatefulWidget {
+  final bool compact;
+
+  const DailyTriplePuzzleWidget({
+    super.key,
+    this.compact = false,
+  });
+
+  @override
+  State<DailyTriplePuzzleWidget> createState() =>
+      _DailyTriplePuzzleWidgetState();
+}
+
+class _DailyTriplePuzzleWidgetState extends State<DailyTriplePuzzleWidget> {
+  late Timer _timer;
+  late PuzzleSlot _currentSlot;
+  late Duration _timeRemaining;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateCurrentSlot();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _updateCurrentSlot();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _updateCurrentSlot() {
+    final now = DateTime.now();
+    final hour = now.hour;
+
+    PuzzleSlot newSlot;
+    DateTime nextSlotTime;
+
+    if (hour >= 6 && hour < 12) {
+      // Morning: 6AM - 12PM (Elders)
+      newSlot = PuzzleSlot.morning;
+      nextSlotTime = DateTime(now.year, now.month, now.day, 12, 0, 1);
+    } else if (hour >= 12 && hour < 17) {
+      // Afternoon: 12:01PM - 5PM (Women) - Note: 5PM starts kids slot
+      newSlot = PuzzleSlot.afternoon;
+      nextSlotTime = DateTime(now.year, now.month, now.day, 17, 0, 0);
+    } else if (hour >= 17 || hour < 6) {
+      // Evening: 5PM - 12AM and 12AM - 6AM (Kids)
+      newSlot = PuzzleSlot.evening;
+      if (hour >= 17) {
+        nextSlotTime = DateTime(now.year, now.month, now.day + 1, 6, 0, 0);
+      } else {
+        nextSlotTime = DateTime(now.year, now.month, now.day, 6, 0, 0);
+      }
+    } else {
+      newSlot = PuzzleSlot.evening;
+      nextSlotTime = DateTime(now.year, now.month, now.day, 6, 0, 0);
+    }
+
+    setState(() {
+      _currentSlot = newSlot;
+      _timeRemaining = nextSlotTime.difference(now);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DailyPuzzleScreen(initialSlot: _currentSlot),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: _currentSlot.gradientColors,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: _currentSlot.gradientColors[0].withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Decorative elements
+            Positioned(
+              top: -20,
+              right: -20,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -30,
+              left: -30,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+
+            // Main content
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          _currentSlot.emoji,
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    _currentSlot.title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'LIVE',
+                                    style: TextStyle(
+                                      color: Colors.yellow[300],
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _currentSlot.subtitle,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Play button
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: _currentSlot.gradientColors[0],
+                          size: 24,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Time remaining & rewards
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        // Timer
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.timer_outlined,
+                                color: Colors.white.withOpacity(0.9),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Ends in',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 10,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        _formatDuration(_timeRemaining),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Divider
+                        Container(
+                          width: 1,
+                          height: 30,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+
+                        // Reward
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                '🏆',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Win up to',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 10,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '${_currentSlot.rewardCoins} Coins',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Divider
+                        Container(
+                          width: 1,
+                          height: 30,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+
+                        // Players
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Icon(
+                                Icons.people_alt_outlined,
+                                color: Colors.white.withOpacity(0.9),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Playing',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 10,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '${_currentSlot.activePlayers}+',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Puzzle type chips
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _currentSlot.puzzleTypes.map((type) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          type,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Puzzle slot enum with all properties
+enum PuzzleSlot {
+  morning,
+  afternoon,
+  evening,
+}
+
+extension PuzzleSlotExtension on PuzzleSlot {
+  String get title {
+    switch (this) {
+      case PuzzleSlot.morning:
+        return 'Elder\'s Puzzle';
+      case PuzzleSlot.afternoon:
+        return 'Women\'s Challenge';
+      case PuzzleSlot.evening:
+        return 'Kids Fun Zone';
+    }
+  }
+
+  String get subtitle {
+    switch (this) {
+      case PuzzleSlot.morning:
+        return 'Morning Brain Exercise (6AM - 12PM)';
+      case PuzzleSlot.afternoon:
+        return 'Afternoon Fun (12PM - 5PM)';
+      case PuzzleSlot.evening:
+        return 'Evening Play Time (5PM - 6AM)';
+    }
+  }
+
+  String get emoji {
+    switch (this) {
+      case PuzzleSlot.morning:
+        return '🧠';
+      case PuzzleSlot.afternoon:
+        return '💐';
+      case PuzzleSlot.evening:
+        return '🎮';
+    }
+  }
+
+  List<Color> get gradientColors {
+    switch (this) {
+      case PuzzleSlot.morning:
+        return [const Color(0xFF6366F1), const Color(0xFF8B5CF6)];
+      case PuzzleSlot.afternoon:
+        return [const Color(0xFFEC4899), const Color(0xFFF472B6)];
+      case PuzzleSlot.evening:
+        return [const Color(0xFF10B981), const Color(0xFF34D399)];
+    }
+  }
+
+  int get rewardCoins {
+    switch (this) {
+      case PuzzleSlot.morning:
+        return 100;
+      case PuzzleSlot.afternoon:
+        return 150;
+      case PuzzleSlot.evening:
+        return 200;
+    }
+  }
+
+  int get activePlayers {
+    switch (this) {
+      case PuzzleSlot.morning:
+        return 234;
+      case PuzzleSlot.afternoon:
+        return 567;
+      case PuzzleSlot.evening:
+        return 892;
+    }
+  }
+
+  List<String> get puzzleTypes {
+    switch (this) {
+      case PuzzleSlot.morning:
+        return ['🧩 Sudoku', '🔢 Logic', '🃏 Memory', '📝 Crossword'];
+      case PuzzleSlot.afternoon:
+        return ['🔤 Word Search', '🖼️ Picture', '❓ Trivia', '🎯 Spot Diff'];
+      case PuzzleSlot.evening:
+        return ['🧩 Jigsaw', '➕ Math Fun', '🃏 Match', '🎨 Color'];
+    }
+  }
+
+  String get timeRange {
+    switch (this) {
+      case PuzzleSlot.morning:
+        return '6:00 AM - 12:00 PM';
+      case PuzzleSlot.afternoon:
+        return '12:01 PM - 5:00 PM';
+      case PuzzleSlot.evening:
+        return '5:00 PM - 6:00 AM';
+    }
+  }
+}

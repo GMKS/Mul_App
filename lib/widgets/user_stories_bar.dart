@@ -62,32 +62,8 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
     final random = Random();
     final mockUsers = [
       {
-        'name': 'Temple Live',
-        'avatar': '🛕',
-        'sponsored': false,
-        'isLive': true
-      },
-      {
-        'name': 'Daily Bhajan',
-        'avatar': '🎵',
-        'sponsored': false,
-        'isLive': false
-      },
-      {
         'name': 'Local News',
         'avatar': '📰',
-        'sponsored': true,
-        'isLive': false
-      },
-      {
-        'name': 'Festival Updates',
-        'avatar': '🎉',
-        'sponsored': false,
-        'isLive': false
-      },
-      {
-        'name': 'Business Deals',
-        'avatar': '💼',
         'sponsored': true,
         'isLive': false
       },
@@ -98,14 +74,14 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
         'isLive': false
       },
       {
-        'name': 'Event Alerts',
-        'avatar': '📅',
+        'name': 'Place of Worship',
+        'avatar': '🙏',
         'sponsored': false,
-        'isLive': false
+        'isLive': true
       },
       {
-        'name': 'Community',
-        'avatar': '👥',
+        'name': 'Daily Bhajan',
+        'avatar': '🎵',
         'sponsored': false,
         'isLive': false
       },
@@ -142,12 +118,9 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: _stories.length + 1, // +1 for "Add Story"
+        itemCount: _stories.length,
         itemBuilder: (context, index) {
-          if (index == 0) {
-            return _buildAddStoryItem();
-          }
-          return _buildStoryItem(_stories[index - 1]);
+          return _buildStoryItem(_stories[index]);
         },
       ),
     );
@@ -268,7 +241,7 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
     return GestureDetector(
       onTap: () => widget.onStoryTap?.call(story),
       child: Container(
-        width: 75,
+        width: 80,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -276,56 +249,9 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
             // Story Avatar with gradient border
             Stack(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: story.isLive
-                        ? const LinearGradient(
-                            colors: [
-                              Color(0xFFFF0000),
-                              Color(0xFFFF4444),
-                              Color(0xFFFF0000),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : hasUnviewedStory
-                            ? const LinearGradient(
-                                colors: [
-                                  Color(0xFFFF6B6B),
-                                  Color(0xFFFF8E53),
-                                  Color(0xFFFFD93D),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                            : null,
-                    color: (hasUnviewedStory || story.isLive)
-                        ? null
-                        : Colors.grey[300],
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child: Container(
-                      width: 55,
-                      height: 55,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _getAvatarColor(story.userName),
-                      ),
-                      child: Center(
-                        child: Text(
-                          story.userAvatar,
-                          style: const TextStyle(fontSize: 28),
-                        ),
-                      ),
-                    ),
-                  ),
+                _buildStoryShape(
+                  story: story,
+                  hasUnviewedStory: hasUnviewedStory,
                 ),
                 // Live Badge
                 if (story.isLive)
@@ -364,9 +290,8 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
             const SizedBox(height: 6),
             // User Name with Sponsored badge
             SizedBox(
-              width: 75,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              width: 80,
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (story.isSponsored)
@@ -375,7 +300,7 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
                         horizontal: 4,
                         vertical: 1,
                       ),
-                      margin: const EdgeInsets.only(right: 2),
+                      margin: const EdgeInsets.only(bottom: 2),
                       decoration: BoxDecoration(
                         color: Colors.amber[100],
                         borderRadius: BorderRadius.circular(3),
@@ -389,22 +314,19 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
                         ),
                       ),
                     ),
-                  Flexible(
-                    child: Text(
-                      story.userName,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: hasUnviewedStory
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                        color: hasUnviewedStory
-                            ? Colors.black87
-                            : Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
+                  Text(
+                    story.userName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: hasUnviewedStory
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                      color:
+                          hasUnviewedStory ? Colors.black87 : Colors.grey[600],
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -413,6 +335,84 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
         ),
       ),
     );
+  }
+
+  Widget _buildStoryShape({
+    required StoryItem story,
+    required bool hasUnviewedStory,
+  }) {
+    // Define shape based on story name
+    final shapePath = _getShapePath(story.userName);
+    final gradient = story.isLive
+        ? const LinearGradient(
+            colors: [
+              Color(0xFFFF0000),
+              Color(0xFFFF4444),
+              Color(0xFFFF0000),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : hasUnviewedStory
+            ? const LinearGradient(
+                colors: [
+                  Color(0xFFFF6B6B),
+                  Color(0xFFFF8E53),
+                  Color(0xFFFFD93D),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null;
+
+    return ClipPath(
+      clipper: shapePath,
+      child: Container(
+        width: 65,
+        height: 65,
+        decoration: BoxDecoration(
+          gradient: gradient,
+          color: (hasUnviewedStory || story.isLive) ? null : Colors.grey[300],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(3),
+          child: ClipPath(
+            clipper: shapePath,
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(2),
+              child: ClipPath(
+                clipper: shapePath,
+                child: Container(
+                  color: _getAvatarColor(story.userName),
+                  child: Center(
+                    child: Text(
+                      story.userAvatar,
+                      style: const TextStyle(fontSize: 28),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  CustomClipper<Path> _getShapePath(String storyName) {
+    switch (storyName) {
+      case 'Local News':
+        return _SquircleClipper(); // Rounded square
+      case 'Health Tips':
+        return _HexagonClipper(); // Hexagon
+      case 'Place of Worship':
+        return _StarClipper(); // Star shape
+      case 'Daily Bhajan':
+        return _DiamondClipper(); // Diamond
+      default:
+        return _CircleClipper(); // Circle fallback
+    }
   }
 
   Color _getAvatarColor(String name) {
@@ -426,4 +426,102 @@ class _UserStoriesBarState extends State<UserStoriesBar> {
     ];
     return colors[name.length % colors.length];
   }
+}
+
+// Custom Clippers for different shapes
+class _CircleClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.addOval(Rect.fromLTWH(0, 0, size.width, size.height));
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class _SquircleClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.addRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(size.width * 0.25),
+      ),
+    );
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class _HexagonClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final w = size.width;
+    final h = size.height;
+    path.moveTo(w * 0.5, 0);
+    path.lineTo(w, h * 0.25);
+    path.lineTo(w, h * 0.75);
+    path.lineTo(w * 0.5, h);
+    path.lineTo(0, h * 0.75);
+    path.lineTo(0, h * 0.25);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class _StarClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final w = size.width;
+    final h = size.height;
+    final cx = w / 2;
+    final cy = h / 2;
+    final outerRadius = w / 2;
+    final innerRadius = outerRadius * 0.5;
+
+    for (int i = 0; i < 10; i++) {
+      final radius = i % 2 == 0 ? outerRadius : innerRadius;
+      final angle = (i * 36 - 90) * (3.14159 / 180);
+      final x = cx + radius * cos(angle);
+      final y = cy + radius * sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class _DiamondClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final w = size.width;
+    final h = size.height;
+    path.moveTo(w * 0.5, 0);
+    path.lineTo(w, h * 0.5);
+    path.lineTo(w * 0.5, h);
+    path.lineTo(0, h * 0.5);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

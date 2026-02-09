@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'dart:io';
 import '../../services/business_service_supabase.dart';
 import '../../services/auth_service.dart';
@@ -106,34 +108,103 @@ class _SubmitBusinessScreenEnhancedState
 
   Future<void> _captureLocation() async {
     try {
-      // Show loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Location services are disabled. Please enable them.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content:
+                    Text('Location permission is required to capture location'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Location permission is permanently denied. Please enable it in settings.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Open app settings
+          await Geolocator.openLocationSettings();
+        }
+        return;
+      }
+
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      // Get current position
+      final Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+        timeLimit: const Duration(seconds: 30),
       );
 
-      // For now, use default coordinates (Hyderabad)
-      // In production, integrate with geolocator package
-      await Future.delayed(const Duration(seconds: 1));
+      // Get address from coordinates
+      String addressText =
+          '${_addressController.text}, ${_cityController.text}';
+      try {
+        final List<Placemark> placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          addressText =
+              '${place.street}, ${place.locality}, ${place.administrativeArea} ${place.postalCode}';
+        }
+      } catch (e) {
+        print('Error getting address: $e');
+        // Use fallback address if geocoding fails
+      }
 
       setState(() {
-        // Default to Hyderabad coordinates
-        // Replace with actual GPS location using geolocator package
-        _latitude = 17.385044;
-        _longitude = 78.486671;
-        _locationAddress =
-            '${_addressController.text}, ${_cityController.text}';
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+        _locationAddress = addressText;
       });
 
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Location captured successfully! ✓'),
+          SnackBar(
+            content: Text(
+              'Location captured! (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -149,6 +220,7 @@ class _SubmitBusinessScreenEnhancedState
           ),
         );
       }
+      print('❌ Error capturing location: $e');
     }
   }
 

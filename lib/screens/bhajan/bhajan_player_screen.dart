@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../models/bhajan_model.dart';
 import '../../services/bhajan_service.dart';
 
@@ -21,6 +22,7 @@ class _BhajanPlayerScreenState extends State<BhajanPlayerScreen>
     with SingleTickerProviderStateMixin {
   final BhajanService _bhajanService = BhajanService();
   late TabController _tabController;
+  late AudioPlayer _audioPlayer;
 
   bool _isPlaying = false;
   bool _isMuted = false;
@@ -28,7 +30,9 @@ class _BhajanPlayerScreenState extends State<BhajanPlayerScreen>
   bool _isFullScreen = false;
   bool _isFavorite = false;
   bool _isDownloaded = false;
+  bool _isAudioLoading = true;
   double _currentPosition = 0.0;
+  double _totalDuration = 0.0;
   double _playbackSpeed = 1.0;
   StreamingQuality _selectedQuality = StreamingQuality.auto;
 
@@ -54,15 +58,117 @@ class _BhajanPlayerScreenState extends State<BhajanPlayerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _audioPlayer = AudioPlayer();
     _isFavorite = widget.bhajan.isFavorite;
     _loadData();
-    _startPlayback();
+    _initAudioPlayer();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future<void> _initAudioPlayer() async {
+    setState(() => _isAudioLoading = true);
+
+    try {
+      // Listen to position updates
+      _audioPlayer.positionStream.listen((position) {
+        if (mounted) {
+          setState(() {
+            _currentPosition = position.inSeconds.toDouble();
+          });
+        }
+      });
+
+      // Listen to duration changes
+      _audioPlayer.durationStream.listen((duration) {
+        if (mounted && duration != null) {
+          setState(() {
+            _totalDuration = duration.inSeconds.toDouble();
+          });
+        }
+      });
+
+      // Listen to player state changes
+      _audioPlayer.playerStateStream.listen((state) {
+        if (mounted) {
+          setState(() {
+            _isPlaying = state.playing;
+            if (state.processingState == ProcessingState.completed) {
+              _currentPosition = 0;
+              _audioPlayer.seek(Duration.zero);
+              _audioPlayer.pause();
+            }
+          });
+        }
+      });
+
+      // Load the audio from Supabase storage or backend
+      final mediaUrl = widget.bhajan.mediaUrl;
+
+      // Check if URL is a valid audio URL (not a placeholder)
+      if (mediaUrl.isEmpty || mediaUrl.contains('example.com')) {
+        // Demo mode - no real audio available
+        setState(() {
+          _isAudioLoading = false;
+          _totalDuration = widget.bhajan.duration.inSeconds.toDouble();
+        });
+        _showDemoModeMessage();
+        return;
+      }
+
+      await _audioPlayer.setUrl(mediaUrl);
+
+      // Get duration from audio player if bhajan duration is zero
+      if (widget.bhajan.duration == Duration.zero) {
+        final duration = _audioPlayer.duration;
+        if (duration != null) {
+          _totalDuration = duration.inSeconds.toDouble();
+        }
+      } else {
+        _totalDuration = widget.bhajan.duration.inSeconds.toDouble();
+      }
+
+      setState(() => _isAudioLoading = false);
+
+      // Auto-play
+      _audioPlayer.play();
+    } catch (e) {
+      debugPrint('Error loading audio: $e');
+      setState(() {
+        _isAudioLoading = false;
+        _totalDuration = widget.bhajan.duration.inSeconds.toDouble();
+      });
+      _showDemoModeMessage();
+    }
+  }
+
+  void _showDemoModeMessage() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '🎵 Demo Mode: "${widget.bhajan.title}"\n'
+                  'Upload actual bhajan audio to Supabase storage for real playback.',
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.orange[700],
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _loadData() async {
@@ -77,27 +183,6 @@ class _BhajanPlayerScreenState extends State<BhajanPlayerScreen>
         _comments = comments;
         _relatedBhajans = recommendations;
       });
-    }
-  }
-
-  void _startPlayback() {
-    setState(() => _isPlaying = true);
-    // Simulate playback progress
-    _simulatePlayback();
-  }
-
-  void _simulatePlayback() async {
-    while (mounted && _isPlaying) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (mounted && _isPlaying) {
-        setState(() {
-          _currentPosition += 0.5 * _playbackSpeed;
-          if (_currentPosition >= widget.bhajan.duration.inSeconds) {
-            _currentPosition = 0;
-            _isPlaying = false;
-          }
-        });
-      }
     }
   }
 
@@ -393,10 +478,22 @@ class _BhajanPlayerScreenState extends State<BhajanPlayerScreen>
   }
 
   Widget _buildControls(Bhajan bhajan) {
+    final maxDuration = _totalDuration > 0
+        ? _totalDuration
+        : (bhajan.duration.inSeconds > 0
+            ? bhajan.duration.inSeconds.toDouble()
+            : 1.0);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
+          // Loading indicator
+          if (_isAudioLoading)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: LinearProgressIndicator(color: Colors.orange),
+            ),
           // Progress Bar
           Column(
             children: [
@@ -412,10 +509,13 @@ class _BhajanPlayerScreenState extends State<BhajanPlayerScreen>
                   thumbColor: Colors.orange,
                 ),
                 child: Slider(
-                  value: _currentPosition,
-                  max: bhajan.duration.inSeconds.toDouble(),
+                  value: _currentPosition.clamp(0, maxDuration),
+                  max: maxDuration,
                   onChanged: (value) {
                     setState(() => _currentPosition = value);
+                  },
+                  onChangeEnd: (value) {
+                    _seekTo(value);
                   },
                 ),
               ),
@@ -430,7 +530,7 @@ class _BhajanPlayerScreenState extends State<BhajanPlayerScreen>
                       style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                     Text(
-                      _formatDuration(bhajan.duration),
+                      _formatDuration(Duration(seconds: maxDuration.toInt())),
                       style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],
@@ -936,10 +1036,25 @@ class _BhajanPlayerScreenState extends State<BhajanPlayerScreen>
   // ==================== ACTIONS ====================
 
   void _togglePlayPause() {
-    setState(() => _isPlaying = !_isPlaying);
     if (_isPlaying) {
-      _simulatePlayback();
+      _audioPlayer.pause();
+    } else {
+      _audioPlayer.play();
     }
+  }
+
+  void _seekTo(double seconds) {
+    _audioPlayer.seek(Duration(seconds: seconds.toInt()));
+  }
+
+  void _setPlaybackSpeed(double speed) {
+    _audioPlayer.setSpeed(speed);
+    setState(() => _playbackSpeed = speed);
+  }
+
+  void _toggleMute() {
+    setState(() => _isMuted = !_isMuted);
+    _audioPlayer.setVolume(_isMuted ? 0.0 : 1.0);
   }
 
   Future<void> _toggleFavorite() async {

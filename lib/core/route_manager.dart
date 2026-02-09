@@ -21,6 +21,7 @@ class RouteManager {
   static const String businessAnalytics = '/business/analytics';
   static const String devotionalFeed = '/devotional/feed';
   static const String regionalFeed = '/regional/feed';
+  static const String localDeals = '/local-deals';
 
   /// Get current context safely
   static BuildContext? get currentContext => navigatorKey.currentContext;
